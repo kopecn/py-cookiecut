@@ -1,11 +1,13 @@
 {
-  "full_name": "Audrey M. Roy Greenfeld",
-  "email": "audreyfeldroy@example.com",
-  "github_username": "audreyfeldroy",
-  "project_name": "Python Boilerplate",
-  "project_slug": "{{ cookiecutter.project_name.lower().replace(' ', '_').replace('-', '_') }}",
-  "project_short_description": "Python Boilerplate contains all the boilerplate you need to create a Python package.",
-  "pypi_username": "{{ cookiecutter.github_username }}",
-  "version": "0.1.0",
-  "__gh_slug": "{{ cookiecutter.github_username }}/{{ cookiecutter.project_slug }}"
+  "fullName": "Nicholas Bergantz",
+  "email": "nicholas.bergantz@gmail.com",
+  "githubUsername": "kopecn",
+  "projectName": "Python Boilerplate",
+  "projectIdentifier": "{{ camelcase(cookiecutter.projectName) }}",
+  "packageName": "myPackage",
+  "moduleName": "myModule",
+  "projectShortDescription": "Python Boilerplate contains all the boilerplate you need to create a Python package.",
+  "pypiUsername": "{{ cookiecutter.githubUsername }}",
+  "version": "0.0.1",
+  "ghIdentifier": "{{ cookiecutter.githubUsername }}/{{ cookiecutter.projectIdentifier }}"
 }

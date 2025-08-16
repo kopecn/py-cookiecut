@@ -54,7 +54,7 @@ homepage = "https://github.com/kopecn/py-cookiecut"
 
 
 [tool.ruff]
-exclude = ["*cookiecutter.project_slug*"]
+exclude = ["*cookiecutter.projectIdentifier*"]
 
 
 [tool.pytest.ini_options]

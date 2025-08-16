@@ -61,14 +61,14 @@ def test_year_compute_in_license_file(cookies):
 
 
 def project_info(result):
-    """Get toplevel dir, project_slug, and project dir from baked cookies"""
+    """Get toplevel dir, projectIdentifier, and project dir from baked cookies"""
     assert result.exception is None
     assert result.project.isdir()
 
     project_path = str(result.project)
-    project_slug = os.path.split(project_path)[-1]
-    project_dir = os.path.join(project_path, project_slug)
-    return project_path, project_slug, project_dir
+    projectIdentifier = os.path.split(project_path)[-1]
+    project_dir = os.path.join(project_path, projectIdentifier)
+    return project_path, projectIdentifier, project_dir
 
 
 def test_bake_with_defaults(cookies):

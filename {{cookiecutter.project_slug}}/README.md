@@ -1,12 +1,12 @@
-# {{ cookiecutter.project_name }}
+# {{ cookiecutter.projectName }}
 
-![PyPI version](https://img.shields.io/pypi/v/{{ cookiecutter.project_slug }}.svg)
-[![Documentation Status](https://readthedocs.org/projects/{{ cookiecutter.project_slug | replace("_", "-") }}/badge/?version=latest)](https://{{ cookiecutter.project_slug | replace("_", "-") }}.readthedocs.io/en/latest/?version=latest)
+![PyPI version](https://img.shields.io/pypi/v/{{ cookiecutter.projectIdentifier }}.svg)
+[![Documentation Status](https://readthedocs.org/projects/{{ cookiecutter.projectIdentifier | replace("_", "-") }}/badge/?version=latest)](https://{{ cookiecutter.projectIdentifier | replace("_", "-") }}.readthedocs.io/en/latest/?version=latest)
 
-{{ cookiecutter.project_short_description }}
+{{ cookiecutter.projectShortDescription }}
 
 * Free software: MIT License
-* Documentation: https://{{ cookiecutter.project_slug | replace("_", "-") }}.readthedocs.io.
+* Documentation: https://{{ cookiecutter.projectIdentifier | replace("_", "-") }}.readthedocs.io.
 
 ## Features
 

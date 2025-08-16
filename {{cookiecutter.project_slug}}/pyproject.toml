@@ -1,13 +1,13 @@
 [project]
-name = "{{cookiecutter.project_name.lower().replace(' ', '-')}}"
+name = "{{cookiecutter.projectIdentifier}}"
 version = "{{ cookiecutter.version }}"
-description = "{{cookiecutter.project_short_description}}"
+description = "{{cookiecutter.projectShortDescription}}"
 readme = "README.md"
 authors = [
-  {name = "{{cookiecutter.full_name}}", email = "{{cookiecutter.email}}"}
+  {name = "{{cookiecutter.fullName}}", email = "{{cookiecutter.email}}"}
 ]
 maintainers = [
-  {name = "{{cookiecutter.full_name}}", email = "{{cookiecutter.email}}"}
+  {name = "{{cookiecutter.fullName}}", email = "{{cookiecutter.email}}"}
 ]
 classifiers = [
 
@@ -22,16 +22,16 @@ requires-python = ">= 3.10"
 test = [
     "coverage",  # testing
     "pytest",  # testing
-    "ruff",  # linting
+    "flake8",  # linting
     "ty", # checking types
     "ipdb"    
 ]
 
 [project.urls]
 
-bugs = "https://github.com/{{cookiecutter.__gh_slug}}/issues"
-changelog = "https://github.com/{{cookiecutter.__gh_slug}}/blob/master/changelog.md"
-homepage = "https://github.com/{{cookiecutter.__gh_slug}}"
+bugs = "https://github.com/{{cookiecutter.ghIdentifier}}/issues"
+changelog = "https://github.com/{{cookiecutter.ghIdentifier}}/blob/master/changelog.md"
+homepage = "https://github.com/{{cookiecutter.ghIdentifier}}"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
@@ -40,7 +40,7 @@ package-dir = {"" = "src"}
 "*" = ["*.*"]
 
 [project.scripts]
-{{cookiecutter.project_slug}} = "{{cookiecutter.project_slug}}.cli:app"
+{{cookiecutter.projectIdentifier}} = "{{cookiecutter.projectIdentifier}}.cli:app"
 
 [tool.ty]
 # All rules are enabled as "error" by default; no need to specify unless overriding.

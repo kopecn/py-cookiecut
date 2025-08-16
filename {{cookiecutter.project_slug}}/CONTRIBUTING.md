@@ -1,119 +1,128 @@
-# Contributing
+# Contributing to {{ cookiecutter.projectName }}
 
-Contributions are welcome, and they are greatly appreciated! Every little bit helps, and credit will always be given.
+Thank you for considering contributing to this project — every bit helps, and all contributors are appreciated!
 
-You can contribute in many ways:
+---
 
-## Types of Contributions
+## How You Can Help
+
+You can contribute in several ways:
 
 ### Report Bugs
 
-Report bugs at https://github.com/{{ cookiecutter.github_username }}/{{ cookiecutter.project_slug }}/issues.
+Open an issue at [GitHub Issues](https://github.com/{{ cookiecutter.githubUsername }}/{{ cookiecutter.projectIdentifier }}/issues) with:
 
-If you are reporting a bug, please include:
-
-- Your operating system name and version.
-- Any details about your local setup that might be helpful in troubleshooting.
-- Detailed steps to reproduce the bug.
+- Your operating system and version
+- Any relevant local setup details
+- Clear steps to reproduce the issue
 
 ### Fix Bugs
 
-Look through the GitHub issues for bugs. Anything tagged with "bug" and "help wanted" is open to whoever wants to implement it.
+Look for issues tagged with `bug` and `help wanted`.
 
 ### Implement Features
 
-Look through the GitHub issues for features. Anything tagged with "enhancement" and "help wanted" is open to whoever wants to implement it.
+Check issues tagged with `enhancement` and `help wanted`.
 
-### Write Documentation
+### Improve Documentation
 
-{{ cookiecutter.project_name }} could always use more documentation, whether as part of the official docs, in docstrings, or even on the web in blog posts, articles, and such.
+Contribute to docstrings, the official docs, or share tutorials and blog posts.
 
-### Submit Feedback
+### Submit Feedback or Ideas
 
-The best way to send feedback is to file an issue at https://github.com/{{ cookiecutter.github_username }}/{{ cookiecutter.project_slug }}/issues.
+For new features, please:
 
-If you are proposing a feature:
+- Explain how the feature should work
+- Keep the scope focused
+- Be mindful that this is a volunteer-driven project
 
-- Explain in detail how it would work.
-- Keep the scope as narrow as possible, to make it easier to implement.
-- Remember that this is a volunteer-driven project, and that contributions are welcome :)
+---
 
-## Get Started!
+## Getting Started
 
-Ready to contribute? Here's how to set up `{{ cookiecutter.project_slug }}` for local development.
+Follow these steps to set up `{{ cookiecutter.projectIdentifier }}` locally:
 
-1. Fork the `{{ cookiecutter.project_slug }}` repo on GitHub.
-2. Clone your fork locally:
+1. **Fork** the repository:  
+   [https://github.com/{{ cookiecutter.githubUsername }}/{{ cookiecutter.projectIdentifier }}/fork](https://github.com/{{ cookiecutter.githubUsername }}/{{ cookiecutter.projectIdentifier }}/fork)
 
-   ```sh
-   git clone git@github.com:your_name_here/{{ cookiecutter.project_slug }}.git
-   ```
+2. **Clone** your fork:
 
-3. Install your local copy into a virtualenv. Assuming you have virtualenvwrapper installed, this is how you set up your fork for local development:
+    ```sh
+    git clone git@github.com:your_name_here/{{ cookiecutter.projectIdentifier }}.git
+    cd {{ cookiecutter.projectIdentifier }}
+    ```
 
-   ```sh
-   mkvirtualenv {{ cookiecutter.project_slug }}
-   cd {{ cookiecutter.project_slug }}/
-   python setup.py develop
-   ```
+3. **Set up a virtual environment** and install the project locally:
 
-4. Create a branch for local development:
+    ```sh
+    mkvirtualenv {{ cookiecutter.projectIdentifier }}
+    python setup.py develop
+    ```
 
-   ```sh
-   git checkout -b name-of-your-bugfix-or-feature
-   ```
+4. **Create a new branch**:
 
-   Now you can make your changes locally.
+    ```sh
+    git checkout -b your-feature-branch
+    ```
 
-5. When you're done making changes, check that your changes pass flake8 and the tests, including testing other Python versions with tox:
+5. **Run linters and tests**:
 
-   ```sh
-   make lint
-   make test
-   # Or
-   make test-all
-   ```
+    ```sh
+    make lint
+    make test-all
+    ```
 
-   To get flake8 and tox, just pip install them into your virtualenv.
+6. **Commit and push your changes**:
 
-6. Commit your changes and push your branch to GitHub:
+    ```sh
+    git add .
+    git commit -m "Describe your changes"
+    git push origin your-feature-branch
+    ```
 
-   ```sh
-   git add .
-   git commit -m "Your detailed description of your changes."
-   git push origin name-of-your-bugfix-or-feature
-   ```
+7. **Open a pull request.**
 
-7. Submit a pull request through the GitHub website.
+---
 
-## Pull Request Guidelines
+## PR Guidelines
 
-Before you submit a pull request, check that it meets these guidelines:
+Before submitting a pull request, make sure:
 
-1. The pull request should include tests.
-2. If the pull request adds functionality, the docs should be updated. Put your new functionality into a function with a docstring, and add the feature to the list in README.md.
-3. The pull request should work for Python 3.12 and 3.13. Tests run in GitHub Actions on every pull request to the main branch, make sure that the tests pass for all supported Python versions.
+- [ ] Tests are included for new logic
+- [ ] Documentation is updated if needed
+- [ ] The project supports Python 3.12 and 3.13
+- [ ] All tests pass (CI checks will run on PRs)
 
-## Tips
+---
 
-To run a subset of tests:
+## Running Specific Tests
+
+To run a targeted test suite:
 
 ```sh
-pytest tests.test_{{ cookiecutter.project_slug }}
+pytest tests/test_{{ cookiecutter.projectIdentifier }}.py
 ```
 
-## Deploying
 
-A reminder for the maintainers on how to deploy. Make sure all your changes are committed (including an entry in HISTORY.md). Then run:
+## Deploying (Maintainers Only)
+
+1. Confirm all changes are committed (including `HISTORY.md`)
+2. Bump the version:
 
 ```sh
-bump2version patch # possible: major / minor / patch
+bump2version patch  # Use major/minor/patch as needed
+```
+
+3. Push changes and tags:
+
+```sh
 git push
 git push --tags
 ```
 
-You can set up a [GitHub Actions workflow](https://docs.github.com/en/actions/use-cases-and-examples/building-and-testing/building-and-testing-python#publishing-to-pypi) to automatically deploy your package to PyPI when you push a new tag.
+4. (Optional) Use [GitHub Actions](https://docs.github.com/en/actions/use-cases-and-examples/building-and-testing/building-and-testing-python#publishing-to-pypi) to auto-deploy to PyPI.
 
 ## Code of Conduct
+This project follows a [Contributor Code of Conduct](https://chatgpt.com/#:~:text=follows%20a%20Contributor-,Code,-of%20Conduct.%20By). By participating, you agree to uphold these standards.
 
-Please note that this project is released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md). By participating in this project you agree to abide by its terms.
+Feel free to reach out or [open an issue](https://github.com/{{ cookiecutter.githubUsername }}/{{ cookiecutter.projectIdentifier }}/issues) with any questions.
