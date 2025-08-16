@@ -4,13 +4,26 @@
 
 .DEFAULT_GOAL := help
 
+# Load anything from the .env file if it exists
+ifneq (,$(wildcard .env))
+	include .env
+	export
+endif
+
 VERSION=v$(shell grep -m 1 version pyproject.toml | tr -s ' ' | tr -d '"' | tr -d "'" | cut -d' ' -f3)
-PYTHON := python3
 PIP := $(PYTHON) -m pip
-VENV := /tmp/pipTest
 
 help:  ## Show available make commands with descriptions
 	@awk 'BEGIN {FS = ":.*?## "}; /^[a-zA-Z0-9_-]+:.*?## / {printf "%-30s -> %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+
+bumpPatch:
+	bump2version patch
+
+bumpMinor:
+	bump2version minor
+
+bumpMajor:
+	bump2version major
 
 clean: cleanBuild cleanArtifacts cleanTest  ## Remove all build, Python, and test-related artifacts
 
@@ -26,6 +39,20 @@ cleanArtifacts:  ## Remove Python bytecode and cache files
 cleanTest:  ## Remove test outputs and coverage data
 	rm -f .coverage
 	rm -rf htmlcov/ .pytest_cache
+
+lint:  ## Run linters like flake8 or ruff
+	flake8 src/
+
+format:  ## Format code with black
+	black src/
+
+typecheck:  ## Type check with mypy
+	mypy src/
+
+fullCheck: lint typecheck test  ## Run full quality and test checks
+
+validateTomlSetup:  ## Check if pyproject.toml and setup are valid
+	$(PYTHON) -m build --sdist --wheel --outdir /tmp/test_build
 
 test:  ## Run tests using the current Python environment
 	pytest
@@ -47,6 +74,9 @@ testInEnvRunPytest:  ## Run tests inside the temporary virtual environment
 testInEnvCleanup:  ## Delete the temporary virtual environment
 	rm -rf $(VENV) || true
 
+checkVenv:
+	@test "$$VIRTUAL_ENV" != "" || (echo "Not in a virtualenv!"; exit 1)
+
 dist: clean  ## Create source and wheel distributions
 	$(PYTHON) -m build
 	ls -l dist
@@ -58,19 +88,26 @@ build:  ## Build project to check packaging without uploading
 version:  ## Display the current project version
 	@echo "Current version is $(VERSION)"
 
-tag:  ## Create and push a git tag for the current version
-	echo "Tagging version $(VERSION)"
+tag: checkCleanGit version  ## Create and push a git tag
+	@echo "Tagging version $(VERSION)"
 	git tag -a $(VERSION) -m "Creating version $(VERSION)"
-	git push origin $(VERSION)	
+	git push origin $(VERSION)
+
+checkCleanGit:
+	@git diff-index --quiet HEAD -- || (echo "Git working directory not clean" && exit 1)
+
+releaseTest: dist  ## Upload to TestPyPI
+	twine upload --repository-url https://test.pypi.org/legacy/ dist/*
 
 release: dist  ## Upload the distribution package to PyPI
-	twine upload dist/*
+	set -euo pipefail && twine upload dist/*
 
 install: clean  ## Install the package in editable mode (local dev install)
 	$(PIP) install -e .
 
 devInstall: clean  ## Install development dependencies
 	$(PIP) install -e .[develop]
+	$(PIP) install pytest flake8 black mypy bump2version build twine
 
 docs:  ## Build HTML documentation using Sphinx
 	sphinx-build -b html docs/ docs/_build/html

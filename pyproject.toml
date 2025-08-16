@@ -41,6 +41,10 @@ develop = [
     "pytest",
     "black",
     "build",
+    "bump2version",
+    "flake8",
+    "mypy",
+    "twine",
 ]
 personal_repos = []
 
