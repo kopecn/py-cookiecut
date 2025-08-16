@@ -9,73 +9,73 @@ PYTHON := python3
 PIP := $(PYTHON) -m pip
 VENV := /tmp/pipTest
 
-help:  ## Show this help
+help:  ## Show available make commands with descriptions
 	@awk 'BEGIN {FS = ":.*?## "}; /^[a-zA-Z0-9_-]+:.*?## / {printf "%-30s -> %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-clean: cleanBuild cleanArtifacts cleanTest  ## Remove all build, test, coverage, and Python artifacts
+clean: cleanBuild cleanArtifacts cleanTest  ## Remove all build, Python, and test-related artifacts
 
-cleanBuild:  ## Remove build artifacts
+cleanBuild:  ## Delete build-related directories and files
 	rm -rf build/ dist/ .eggs/
 	find . -name '*.egg-info' -exec rm -rf {} +
 	find . -name '*.egg' -exec rm -rf {} +
 
-cleanArtifacts:  ## Remove Python file artifacts
+cleanArtifacts:  ## Remove Python bytecode and cache files
 	find . \( -name '*.pyc' -o -name '*.pyo' -o -name '*~' \) -exec rm -f {} +
 	find . -name '__pycache__' -exec rm -rf {} +
 
-cleanTest:  ## Remove test and coverage artifacts
+cleanTest:  ## Remove test outputs and coverage data
 	rm -f .coverage
 	rm -rf htmlcov/ .pytest_cache
 
-test:  ## Run tests quickly with the default Python
+test:  ## Run tests using the current Python environment
 	pytest
 
-testInEnv: clean testInEnvInstallFromSetup testInEnvRunPytest testInEnvCleanup  ## Create temp venv, install deps, run tests, cleanup
+testInEnv: clean testInEnvInstallFromSetup testInEnvRunPytest testInEnvCleanup  ## Run tests in a temporary virtual environment
 
-testInEnvInstallFromSetup: testInEnvCleanup  ## Create temp venv in $(VENV) and install dev dependencies
+testInEnvInstallFromSetup: testInEnvCleanup  ## Set up temporary venv and install dev dependencies
 	$(PYTHON) -m venv $(VENV) && \
 	. $(VENV)/bin/activate && \
 	which python3 && \
 	$(PYTHON) -m pip install ".[personal_repos,develop]"
 	@echo "Virtual env can be activated with 'source $(VENV)/bin/activate'"
 
-testInEnvRunPytest:  ## Run pytest inside temp virtual environment
+testInEnvRunPytest:  ## Run tests inside the temporary virtual environment
 	. $(VENV)/bin/activate && \
 	which $(PYTHON) && \
 	$(PYTHON) -m pytest
 
-testInEnvCleanup:  ## Remove temp virtual environment
+testInEnvCleanup:  ## Delete the temporary virtual environment
 	rm -rf $(VENV) || true
 
-dist: clean  ## Build source and wheel package
+dist: clean  ## Create source and wheel distributions
 	$(PYTHON) -m build
 	ls -l dist
 
-build:  ## Build the project, useful for checking that packaging is correct
+build:  ## Build project to check packaging without uploading
 	rm -rf build dist
 	$(PYTHON) -m build
 
-version:  ## Print the current version of the project
+version:  ## Display the current project version
 	@echo "Current version is $(VERSION)"
 
-tag:  ## Tag the current version in git and push to github
+tag:  ## Create and push a git tag for the current version
 	echo "Tagging version $(VERSION)"
 	git tag -a $(VERSION) -m "Creating version $(VERSION)"
 	git push origin $(VERSION)	
 
-release: dist  ## Package and upload a release to PyPI
+release: dist  ## Upload the distribution package to PyPI
 	twine upload dist/*
 
-install: clean  ## Install the package in editable mode
+install: clean  ## Install the package in editable mode (local dev install)
 	$(PIP) install -e .
 
 devInstall: clean  ## Install development dependencies
 	$(PIP) install -e .[develop]
 
-docs:  ## Build HTML documentation with Sphinx
+docs:  ## Build HTML documentation using Sphinx
 	sphinx-build -b html docs/ docs/_build/html
 	@echo "Documentation built in docs/_build/html"
 
 flushpip: SHELL := /bin/bash
-flushpip:  ## Uninstall all packages from current pip environment
+flushpip:  ## Uninstall all packages from the current environment
 	$(PIP) uninstall -y -r <($(PIP) freeze)
