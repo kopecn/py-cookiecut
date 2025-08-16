@@ -1,45 +1,25 @@
-.PHONY: clean cleanTest cleanPyc cleanBuild docs help test testInTmpVenv \
-	venvInstallTempEnvFromSetup venvRunPytestInTmpEnv venvCleanupTmpEnv \
+.PHONY: clean cleanTest cleanArtifacts cleanBuild docs help test testInEnv \
+	testInEnvInstallFromSetup testInEnvRunPytest testInEnvCleanup \
 	dist release install devInstall flushPip build version tag
 
 .DEFAULT_GOAL := help
 
-# Python one-liner to open a file in the browser
-define BROWSER_PYSCRIPT
-import os, webbrowser, sys
-from urllib.request import pathname2url
-webbrowser.open("file://" + pathname2url(os.path.abspath(sys.argv[1])))
-endef
-export BROWSER_PYSCRIPT
-
-# Python one-liner to print help for Makefile targets
-define PRINT_HELP_PYSCRIPT
-import re, sys
-for line in sys.stdin:
-    match = re.match(r'^([a-zA-Z_-]+):.*?## (.*)$$', line)
-    if match:
-        target, help = match.groups()
-        print("%-30s -> %s" % (target, help))
-endef
-export PRINT_HELP_PYSCRIPT
-
 VERSION=v$(shell grep -m 1 version pyproject.toml | tr -s ' ' | tr -d '"' | tr -d "'" | cut -d' ' -f3)
 PYTHON := python3
-BROWSER := $(PYTHON) -c "$$BROWSER_PYSCRIPT"
 PIP := $(PYTHON) -m pip
 VENV := /tmp/pipTest
 
 help:  ## Show this help
-	@$(PYTHON) -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*?## "}; /^[a-zA-Z0-9_-]+:.*?## / {printf "%-30s -> %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-clean: cleanBuild cleanPyc cleanTest  ## Remove all build, test, coverage, and Python artifacts
+clean: cleanBuild cleanArtifacts cleanTest  ## Remove all build, test, coverage, and Python artifacts
 
 cleanBuild:  ## Remove build artifacts
 	rm -rf build/ dist/ .eggs/
 	find . -name '*.egg-info' -exec rm -rf {} +
 	find . -name '*.egg' -exec rm -rf {} +
 
-cleanPyc:  ## Remove Python file artifacts
+cleanArtifacts:  ## Remove Python file artifacts
 	find . \( -name '*.pyc' -o -name '*.pyo' -o -name '*~' \) -exec rm -f {} +
 	find . -name '__pycache__' -exec rm -rf {} +
 
@@ -50,21 +30,21 @@ cleanTest:  ## Remove test and coverage artifacts
 test:  ## Run tests quickly with the default Python
 	pytest
 
-testInTmpVenv: clean venvInstallTempEnvFromSetup venvRunPytestInTmpEnv venvCleanupTmpEnv  ## Create temp venv, install deps, run tests, cleanup
+testInEnv: clean testInEnvInstallFromSetup testInEnvRunPytest testInEnvCleanup  ## Create temp venv, install deps, run tests, cleanup
 
-venvInstallTempEnvFromSetup: venvCleanupTmpEnv  ## Create temp venv in $(VENV) and install dev dependencies
+testInEnvInstallFromSetup: testInEnvCleanup  ## Create temp venv in $(VENV) and install dev dependencies
 	$(PYTHON) -m venv $(VENV) && \
 	. $(VENV)/bin/activate && \
 	which python3 && \
 	$(PYTHON) -m pip install ".[personal_repos,develop]"
 	@echo "Virtual env can be activated with 'source $(VENV)/bin/activate'"
 
-venvRunPytestInTmpEnv:  ## Run pytest inside temp virtual environment
+testInEnvRunPytest:  ## Run pytest inside temp virtual environment
 	. $(VENV)/bin/activate && \
 	which $(PYTHON) && \
 	$(PYTHON) -m pytest
 
-venvCleanupTmpEnv:  ## Remove temp virtual environment
+testInEnvCleanup:  ## Remove temp virtual environment
 	rm -rf $(VENV) || true
 
 dist: clean  ## Build source and wheel package
