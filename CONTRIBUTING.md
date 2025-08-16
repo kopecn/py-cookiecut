@@ -1,43 +1,76 @@
-# Contributing
+# Contributing Guide
 
-Contributions are welcome, and they are greatly appreciated! Every little bit helps, and credit will always be given.
+Thank you for your interest in contributing to this project. While this is a solo-driven effort, thoughtful contributions and constructive collaboration are always welcome and appreciated.
 
-You can contribute in many ways:
+## Ways You Can Contribute
 
-## Types of Contributions
+### 🐞 Report Bugs
 
-### Report Bugs
+Found a bug? Please open an issue on the project's GitHub repository.
 
-Report bugs at https://github.com/audreyfeldroy/cookiecutter-pypackage/issues
+When reporting a bug, include as much relevant detail as possible:
 
-If you are reporting a bug, please include:
+- Operating system and version  
+- Python version (or relevant runtime environment)  
+- Steps to reproduce the issue  
+- Expected vs. actual behavior  
 
-- Your operating system name and version.
-- Any details about your local setup that might be helpful in troubleshooting.
-- Detailed steps to reproduce the bug.
+This information helps streamline the debugging process.
 
-### Fix Bugs
+### 🔧 Fix Issues
 
-Look through the GitHub issues for bugs. Anything tagged with "bug" and "help wanted" is open to whoever wants to implement a fix for it.
+Bug fixes and small enhancements are a great way to get started.
 
-### Implement Features
+Check the [issue tracker](https://github.com/kopecn/py-cookiecut/issues) for open issues labeled **bug** or **help wanted**. Feel free to comment if you plan to work on one — communication helps avoid duplicate effort.
 
-Look through the GitHub issues for features. Anything tagged with "enhancement" and "help wanted" is open to whoever wants to implement it.
+### ✨ Suggest or Implement Features
 
-### Write Documentation
+If you have an idea for a new feature, open a discussion or issue explaining:
 
-Cookiecutter PyPackage could always use more documentation, whether as part of the official docs, in docstrings, or even on the web in blog posts, articles, and such.
+- What problem the feature solves  
+- A minimal, clear scope for implementation  
+- Any alternatives you considered  
 
-### Submit Feedback
+Feature proposals are always welcome, but please understand that this is a time-constrained solo project — well-scoped, actionable suggestions are easier to consider or accept.
 
-The best way to send feedback is to file an issue at https://github.com/audreyfeldroy/cookiecutter-pypackage/issues.
+### 📝 Improve Documentation
 
-If you are proposing a new feature:
+Clear documentation benefits everyone. Contributions can include:
 
-- Explain in detail how it would work.
-- Keep the scope as narrow as possible, to make it easier to implement.
-- Remember that this is a volunteer-driven project, and that contributions are welcome :)
+- Improving or clarifying existing documentation  
+- Writing new docs for new features  
+- Creating tutorials, blog posts, or guides  
 
-## Get Started!
+If you notice areas lacking clarity or completeness, feel free to submit a PR or open an issue.
 
-Ready to contribute? Here's how to set up `cookiecutter-pypackage` for local development. Please note this documentation assumes you already have ...
+### 💬 Provide Feedback
+
+If you’re using the project and have suggestions — whether it’s usability, design, or direction — open an issue to start the conversation.
+
+Constructive feedback helps guide future development.
+
+---
+
+## Getting Started
+
+Want to set up the project locally and contribute code? Here's a basic outline to get started:
+
+1. **Fork** the repository and clone your fork locally.  
+2. Create a virtual environment and install the dependencies.  
+3. Create a new branch for your changes.  
+4. Commit clearly and push your work.  
+5. Open a pull request with a concise description of your changes.  
+
+Further setup instructions can be found in the project README or in the `CONTRIBUTING.md` (if separate).
+
+---
+
+## Code of Conduct
+
+All contributors are expected to adhere to a respectful and inclusive standard of communication. Disagreements are fine — disrespect is not.
+
+---
+
+## Final Notes
+
+This project is actively maintained by a solo developer. Contributions are welcome, but time and focus are limited. Patience and clarity go a long way — thank you for being part of the journey.

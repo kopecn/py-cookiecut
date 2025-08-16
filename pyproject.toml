@@ -1,12 +1,17 @@
+[build-system]
+requires = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+
 [project]
-name = "cookiecutter-pypackage"
-version = "0.2.0"
-description = "Cookiecutter template for a Python package"
-readme = "README.md"
+name = "py-cookiecut"
+version = "0.0.1"
+description = "Cookiecutter template that match's Nick's workflows"
+readme = {file = "README.md", content-type = "text/markdown"}
 requires-python = ">=3.10"
-license = { text = "MIT" }
+license = {text = "TBD"}
 authors = [
-    { name = "Audrey M. Roy Greenfeld", email = "audrey@feldroy.com" }
+    { name = "Nicholas Bergantz", email = "nicholas.bergantz@gmail.com" },
 ]
 keywords = ["cookiecutter", "template", "package"]
 classifiers = [
@@ -29,21 +34,24 @@ dependencies = [
     "ruff>=0.12.4",
     "pytest>=8.4.1",
     "pytest-cookies>=0.7.0",
-    "typer>=0.16.0",
-    "alabaster>=1.0.0",
-    "watchdog>=6.0.0",
 ]
+
+[project.optional-dependencies]
+develop = [
+    "pytest",
+    "black",
+    "build",
+]
+personal_repos = []
+
 
 [project.urls]
-homepage = "https://github.com/audreyfeldroy/cookiecutter-pypackage"
+homepage = "https://github.com/kopecn/py-cookiecut"
+
 
 [tool.ruff]
-exclude = [
-    "*cookiecutter.project_slug*"
-    ]
+exclude = ["*cookiecutter.project_slug*"]
+
 
 [tool.pytest.ini_options]
-testpaths = [
-    "tests",
-]
-
+testpaths = ["tests"]

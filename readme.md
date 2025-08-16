@@ -1,24 +1,28 @@
 # Cookiecutter PyPackage
 
-[![PyPI version](https://img.shields.io/pypi/v/cookiecutter-pypackage.svg)](https://pypi.python.org/pypi/cookiecutter-pypackage)
-[![PyPI downloads](https://img.shields.io/pypi/dm/cookiecutter-pypackage.svg)](https://pypi.python.org/pypi/cookiecutter-pypackage)
+[![PyPI version](https://img.shields.io/pypi/v/TBD.svg)](https://pypi.python.org/pypi/TBD)
+[![PyPI downloads](https://img.shields.io/pypi/dm/TBD.svg)](https://pypi.python.org/pypi/TBD)
 
-[Cookiecutter](https://github.com/cookiecutter/cookiecutter) template for a Python package.
+A [Cookiecutter](https://github.com/cookiecutter/cookiecutter) template for bootstrapping a modern Python package.
 
-*   GitHub repo: [https://github.com/audreyfeldroy/cookiecutter-pypackage/](https://github.com/audreyfeldroy/cookiecutter-pypackage/)
-*   Free software: MIT license
-*   Discord: [https://discord.gg/PWXJr3upUE](https://discord.gg/PWXJr3upUE)
+-   **GitHub**: [kopecn/py-cookiecut](https://github.com/kopecn/py-cookiecut/)
+-   **License**: MIT
+-   **Discord**: [Join the community](https://discord.gg/TBD)
 
-## Features
+---
 
-*   Testing setup with pytest
-*   GitHub Actions testing: Setup to easily test for Python 3.10, 3.11, 3.12, and 3.13
-*   Auto-release to [PyPI](https://pypi.python.org/pypi) when you push a new tag to master (optional)
-*   Command line interface using Typer
+## 🚀 Features
 
-## Quickstart
+-   ✅ Testing setup with **pytest**
+-   🔁 GitHub Actions CI for **Python 3.10 – 3.13**
+-   📦 Auto-release to [PyPI](https://pypi.python.org/pypi) via tag push (optional)
+-   🖥️ CLI support via **Typer**
 
-Install the latest Cookiecutter if you haven't installed it yet:
+---
+
+## ⚡ Quickstart
+
+### 1. Install Cookiecutter
 
 ```bash
 pip install -U cookiecutter
@@ -27,31 +31,24 @@ pip install -U cookiecutter
 Generate a Python package project:
 
 ```bash
-cookiecutter https://github.com/audreyfeldroy/cookiecutter-pypackage.git
+cookiecutter https://github.com/kopecn/py-cookiecut.git
 ```
 
 Then:
 
-*   Create a repo and put it there.
-*   [Register](https://packaging.python.org/tutorials/packaging-projects/#uploading-the-distribution-archives) your project with PyPI.
-*   Add the repo to your [Read the Docs](https://readthedocs.io/) account + turn on the Read the Docs service hook.
-*   Release your package by pushing a new tag to master.
+1. **Create a GitHub repository**  
+   Push your newly generated project to a GitHub repo.
 
-## Not Exactly What You Want?
+2. **Register your project with PyPI**  
+   Follow the [official guide](https://packaging.python.org/tutorials/packaging-projects/#uploading-the-distribution-archives) to upload your distribution archives.
 
-Don't worry, you have options:
+3. **Set up documentation on Read the Docs**  
+   Add your repository to your [Read the Docs](https://readthedocs.io/) account and enable the service hook for automated builds.
 
-### Fork This / Create Your Own
+4. **Release your package**  
+   Push a new Git tag to the `master` branch to trigger an automatic release to PyPI (if configured).
 
-If you have differences in your preferred setup, I encourage you to fork this
-to create your own version. Or create your own; it doesn't strictly have to
-be a fork.
+## Suggestions / Forking?
 
-### Similar Cookiecutter Templates
-
-Explore other forks to get ideas. See the [network](https://github.com/audreyfeldroy/cookiecutter-pypackage/network) and [family tree](https://github.com/audreyfeldroy/cookiecutter-pypackage/network/members) for this repo.
-
-### Or Submit a Pull Request
-
-I also accept pull requests on this, if they're small, atomic, and if they
-make my own packaging experience better.
+- **Fork freely**: Customize the template to your needs. This project was originally based on [Audrey's cookiecutter-pypackage](https://github.com/audreyfeldroy/cookiecutter-pypackage/).
+- **Contribute via pull request**: Small, atomic PRs that improve the packaging experience are welcome!  Thanks Audrey. 
