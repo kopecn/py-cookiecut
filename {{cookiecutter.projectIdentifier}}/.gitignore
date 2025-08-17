@@ -84,7 +84,7 @@ coverage.xml
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
-Makefile
+
 
 # Translations
 *.mo
