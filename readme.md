@@ -1,22 +1,9 @@
 # Cookiecutter PyPackage
 
-[![PyPI version](https://img.shields.io/pypi/v/TBD.svg)](https://pypi.python.org/pypi/TBD)
-[![PyPI downloads](https://img.shields.io/pypi/dm/TBD.svg)](https://pypi.python.org/pypi/TBD)
-
 A [Cookiecutter](https://github.com/cookiecutter/cookiecutter) template for bootstrapping a modern Python package.
 
 -   **GitHub**: [kopecn/py-cookiecut](https://github.com/kopecn/py-cookiecut/)
 -   **License**: MIT
--   **Discord**: [Join the community](https://discord.gg/TBD)
-
----
-
-## 🚀 Features
-
--   ✅ Testing setup with **pytest**
--   🔁 GitHub Actions CI for **Python 3.10 – 3.13**
--   📦 Auto-release to [PyPI](https://pypi.python.org/pypi) via tag push (optional)
--   🖥️ CLI support via **Typer**
 
 ---
 
