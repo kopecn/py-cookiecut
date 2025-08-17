@@ -40,8 +40,8 @@ cleanTest:  ## Remove test outputs and coverage data
 	rm -f .coverage
 	rm -rf htmlcov/ .pytest_cache
 
-lint:  ## Run linters like flake8 or ruff
-	flake8 src/
+lint:  ## Run linters like pylint or ruff
+	pylint src/
 
 format:  ## Format code with black
 	black src/
@@ -107,7 +107,7 @@ install: clean  ## Install the package in editable mode (local dev install)
 
 devInstall: clean  ## Install development dependencies
 	$(PIP) install -e .[develop]
-	$(PIP) install pytest flake8 black mypy bump2version build twine
+	$(PIP) install pytest pylint black mypy bump2version build twine
 
 docs:  ## Build HTML documentation using Sphinx
 	sphinx-build -b html docs/ docs/_build/html

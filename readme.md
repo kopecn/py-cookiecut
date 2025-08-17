@@ -50,5 +50,5 @@ Then:
 
 ## Suggestions / Forking?
 
-- **Fork freely**: Customize the template to your needs. This project was originally based on [Audrey's cookiecutter-pypackage](https://github.com/audreyfeldroy/cookiecutter-pypackage/).
+- **Fork freely**: Customize the template to your needs.  This project was originally based on [Audrey's cookiecutter-pypackage](https://github.com/audreyfeldroy/cookiecutter-pypackage/).
 - **Contribute via pull request**: Small, atomic PRs that improve the packaging experience are welcome!  Thanks Audrey. 

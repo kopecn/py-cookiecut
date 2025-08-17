@@ -9,7 +9,7 @@ version = "0.0.1"
 description = "Cookiecutter template that match's Nick's workflows"
 readme = {file = "README.md", content-type = "text/markdown"}
 requires-python = ">=3.10"
-license = {text = "TBD"}
+license = {text = "MIT"}
 authors = [
     { name = "Nicholas Bergantz", email = "nicholas.bergantz@gmail.com" },
 ]
@@ -19,7 +19,6 @@ classifiers = [
     "Environment :: Console",
     "Intended Audience :: Developers",
     "Natural Language :: English",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
@@ -31,7 +30,6 @@ classifiers = [
 ]
 dependencies = [
     "cookiecutter>=2.6.0",
-    "ruff>=0.12.4",
     "pytest>=8.4.1",
     "pytest-cookies>=0.7.0",
 ]
@@ -42,7 +40,7 @@ develop = [
     "black",
     "build",
     "bump2version",
-    "flake8",
+    "pylint",
     "mypy",
     "twine",
 ]
@@ -53,9 +51,6 @@ personal_repos = []
 homepage = "https://github.com/kopecn/py-cookiecut"
 
 
-[tool.ruff]
-exclude = ["*cookiecutter.projectIdentifier*"]
-
-
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests/*"]
+python_functions = ["test*"]

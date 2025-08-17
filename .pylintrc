@@ -1,0 +1,6 @@
+[BASIC]
+function-naming-style=camel
+variable-naming-style=camel
+argument-naming-style=camel
+attr-naming-style=camel
+class-naming-style=camel

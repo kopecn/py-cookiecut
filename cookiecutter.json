@@ -3,7 +3,7 @@
   "email": "nicholas.bergantz@gmail.com",
   "githubUsername": "kopecn",
   "projectName": "Python Boilerplate",
-  "projectIdentifier": "{{ camelcase(cookiecutter.projectName) }}",
+  "projectIdentifier": "pythonBoilerplate",
   "packageName": "myPackage",
   "moduleName": "myModule",
   "projectShortDescription": "Python Boilerplate contains all the boilerplate you need to create a Python package.",
