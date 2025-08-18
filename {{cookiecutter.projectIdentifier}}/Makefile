@@ -117,3 +117,7 @@ docs:  ## Build HTML documentation using Sphinx
 flushpip: SHELL := /bin/bash
 flushpip:  ## Uninstall all packages from the current environment
 	$(PIP) uninstall -y -r <($(PIP) freeze)
+
+e: ## install this package into environment for development 
+	$(PIP) install -e .
+
