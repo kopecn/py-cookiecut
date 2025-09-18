@@ -54,3 +54,4 @@ homepage = "https://github.com/kopecn/py-cookiecut"
 [tool.pytest.ini_options]
 testpaths = ["tests/*"]
 python_functions = ["test*"]
+python_files = ["test*.py"]
