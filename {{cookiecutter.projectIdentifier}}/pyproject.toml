@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "{{ cookiecutter.projectIdentifier }}"
+version = "{{ cookiecutter.version }}"
+description = "{{cookiecutter.projectShortDescription}}"
+readme = {file = "README.md", content-type = "text/markdown"}
+requires-python = ">= 3.10"
+authors = [
+  {name = "{{cookiecutter.fullName}}", email = "{{cookiecutter.email}}"}
+]
+keywords = [
+  
+]
+classifiers = [
+
+]
+license = {text = "MIT"}
+dependencies = [
+
+]
+
+[project.optional-dependencies]
+develop = [
+    "pytest",
+    "black",
+    "build",
+    "bump2version",
+    "pylint",
+    "mypy",
+    "twine",
+]
+personal_repos = []
+
+[project.urls]
+
+bugs = "https://github.com/{{cookiecutter.ghIdentifier}}/issues"
+changelog = "https://github.com/{{cookiecutter.ghIdentifier}}/blob/master/changelog.md"
+homepage = "https://github.com/{{cookiecutter.ghIdentifier}}"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.package-data]
+"*" = ["*.*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests/*"]
+python_functions = ["test*"]
+python_files = ["test*.py"]

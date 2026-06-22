@@ -1,0 +1,13 @@
+{
+  "fullName": "Nicholas Bergantz",
+  "email": "nicholas.bergantz@gmail.com",
+  "githubUsername": "kopecn",
+  "projectName": "Python Boilerplate",
+  "projectIdentifier": "pythonBoilerplate",
+  "packageName": "myPackage",
+  "moduleName": "myModule",
+  "projectShortDescription": "Python Boilerplate contains all the boilerplate you need to create a Python package.",
+  "pypiUsername": "{{ cookiecutter.githubUsername }}",
+  "version": "0.0.1",
+  "ghIdentifier": "{{ cookiecutter.githubUsername }}/{{ cookiecutter.projectIdentifier }}"
+}

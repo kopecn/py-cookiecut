@@ -1,0 +1,10 @@
+
+pytest
+black
+build
+bump2version
+pylint
+mypy
+twine
+pytest-cookies
+.
