@@ -1,8 +1,9 @@
 # ============================================================================
 # CONFIG
 # ============================================================================
-.PHONY: help version checkCleanGit bumpPatch bumpMinor bumpMajor tag open-github \
+.PHONY: help version checkCleanGit open-github \
 	clean cleanBuild cleanArtifacts cleanTest \
+	bump-patch bump-minor bump-major \
 	check-uv install-uv list-uv \
 	uv-bootstrap-pythons uv-bootstrap uv-sync uv-sync-headless uv-editable uv-refresh \
 	uv-lint uv-lintFix uv-format uv-typecheck uv-typecheck-ty uv-fullCheck \
@@ -31,6 +32,7 @@ VENV ?= .cleanroom-venv
 
 # Derived
 PIP := $(PYTHON) -m pip
+BUMPVERSION := bumpversion --allow-dirty
 REPO := $(notdir $(CURDIR))
 UNAME_S := $(shell uname -s)
 HR := ========================================
@@ -50,7 +52,7 @@ help:  ## Show this help
 	@echo ""
 	@awk 'BEGIN {FS = ":.*?## "} \
 		/^##@ / {printf "\n\033[1m%s\033[0m\n", substr($$0, 5); next} \
-		/^[a-zA-Z0-9_-]+:.*?## / {printf "  \033[36m%-26s\033[0m %s\n", $$1, $$2}' \
+		/^[a-zA-Z0-9_%-]+:.*?## / {printf "  \033[36m%-26s\033[0m %s\n", $$1, $$2}' \
 		$(MAKEFILE_LIST)
 
 # ============================================================================
@@ -58,25 +60,32 @@ help:  ## Show this help
 # ============================================================================
 ##@ Common · Version & Git
 version:  ## Display the current project version
-	@echo ">> [TODO G8] version not yet implemented"
+	@$(PYTHON) -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])"
 
 checkCleanGit:  ## Guard: fail if the git working tree is dirty
-	@echo ">> [TODO G8] checkCleanGit not yet implemented"
+	@[ -z "$$(git status --porcelain)" ] || \
+		(echo "Working tree is dirty. Commit or stash changes first."; exit 1)
 
-bumpPatch:  ## Bump patch version (0.0.x)
-	@echo ">> [TODO G8] bumpPatch not yet implemented"
+bump-patch:  ## Increment patch version (0.0.x)
+	$(BUMPVERSION) patch
 
-bumpMinor:  ## Bump minor version (0.x.0)
-	@echo ">> [TODO G8] bumpMinor not yet implemented"
+bump-minor:  ## Increment minor version (0.x.0)
+	$(BUMPVERSION) minor
 
-bumpMajor:  ## Bump major version (x.0.0)
-	@echo ">> [TODO G8] bumpMajor not yet implemented"
+bump-major:  ## Increment major version (x.0.0)
+	$(BUMPVERSION) major
 
-tag: checkCleanGit version  ## Create and push a git tag
-	@echo ">> [TODO G8] tag not yet implemented"
+bump-%:  ## Usage: make bump-patch|bump-minor|bump-major
+	$(BUMPVERSION) $*
 
-open-github:  ## Open the GitHub repository in the default browser (OS-aware)
-	@echo ">> [TODO G8] open-github not yet implemented"
+open-github:  ## Open the GitHub repository in the default browser (macOS/Linux)
+	@remote=$$(git remote | head -1); \
+	[ -n "$$remote" ] || { echo "No git remote configured."; exit 1; }; \
+	url=$$(git remote get-url "$$remote" | sed -e 's|git@github.com:|https://github.com/|' -e 's|\.git$$||'); \
+	echo "Opening $$url"; \
+	if [ "$(UNAME_S)" = "Darwin" ]; then open "$$url"; \
+	elif command -v xdg-open >/dev/null 2>&1; then xdg-open "$$url"; \
+	else echo "No browser opener found; visit: $$url"; fi
 
 # ============================================================================
 # COMMON · CLEAN  (base for pip install / test-in-env)
