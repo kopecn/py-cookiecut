@@ -24,21 +24,19 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-develop = [
+dev = [
     "pytest",
-    "black",
+    "ruff",
     "build",
     "bump2version",
-    "pylint",
     "mypy",
     "twine",
 ]
-personal_repos = []
 
 [project.urls]
 
 bugs = "https://github.com/{{cookiecutter.ghIdentifier}}/issues"
-changelog = "https://github.com/{{cookiecutter.ghIdentifier}}/blob/master/changelog.md"
+changelog = "https://github.com/{{cookiecutter.ghIdentifier}}/blob/main/HISTORY.md"
 homepage = "https://github.com/{{cookiecutter.ghIdentifier}}"
 
 [tool.setuptools]
