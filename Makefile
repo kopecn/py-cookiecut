@@ -182,35 +182,56 @@ uv-refresh: check-uv  ## Clean cache + upgrade all deps to latest
 # ============================================================================
 ##@ UV · Quality
 uv-lint: check-uv  ## Run ruff linter
-	@echo ">> [TODO G5] uv-lint not yet implemented"
+	$(UV) ruff check $(PY_ALL)
 
 uv-lintFix: check-uv  ## Run ruff linter with auto-fix
-	@echo ">> [TODO G5] uv-lintFix not yet implemented"
+	$(UV) ruff check --fix $(PY_ALL)
 
 uv-format: check-uv  ## Format code with ruff
-	@echo ">> [TODO G5] uv-format not yet implemented"
+	$(UV) ruff format $(PY_ALL)
 
 uv-typecheck: check-uv  ## Strict type check with mypy
-	@echo ">> [TODO G5] uv-typecheck not yet implemented"
+	$(UV) mypy $(PY_SRC) $(PY_TESTS) $(PY_EXAMPLES)
 
-uv-typecheck-ty: check-uv  ## Strict type check with ty (preview)
-	@echo ">> [TODO G5] uv-typecheck-ty not yet implemented"
-
-uv-fullCheck: uv-sync uv-lint uv-typecheck uv-test  ## lint + typecheck + tests
-	@echo ">> [TODO G5] uv-fullCheck orchestrator (prereqs above)"
+uv-fullCheck: full-check: sync-dev lint type-check test  ## Run lint, typecheck, and tests  ## lint + typecheck + tests
 
 # ============================================================================
 # UV · TEST
 # ============================================================================
 ##@ UV · Test
 uv-test: check-uv  ## Run tests on DEFAULT_PYTHON
-	@echo ">> [TODO G4] uv-test not yet implemented"
+	$(UV) pytest
 
-uv-test-all: check-uv  ## Run tests across all configured Pythons (.venvs/<ver>)
-	@echo ">> [TODO G4] uv-test-all not yet implemented"
+uv-test-all: check-uv  ## Run tests across all configured Python versions
+	@failed=""; \
+	for py in $(PYTHONS); do \
+		echo ""; \
+		echo "========================================"; \
+		echo "Testing Python $$py"; \
+		echo "========================================"; \
+		venv=".venv-py$$(echo $$py | tr -d .)"; \
+		[ -d "$$venv" ] || uv venv --python $$py "$$venv"; \
+		VIRTUAL_ENV="$$venv" uv pip install -q -r requirements.txt; \
+		VIRTUAL_ENV="$$venv" uv pip install -q -e ".[dev]"; \
+		if VIRTUAL_ENV="$$venv" uv run --no-project pytest; then \
+			echo "PASS: Python $$py"; \
+		else \
+			echo "FAIL: Python $$py"; \
+			failed="$$failed $$py"; \
+		fi; \
+	done; \
+	echo ""; \
+	echo "========================================"; \
+	if [ -n "$$failed" ]; then \
+		echo "FAILED VERSIONS:$$failed"; \
+		echo "========================================"; \
+		exit 1; \
+	else \
+		echo "ALL PYTHON VERSIONS PASSED"; \
+		echo "========================================"; \
+	fi
 
-uv-test-matrix: uv-bootstrap-pythons uv-test-all  ## Ensure pythons, then test-all
-	@echo ">> [TODO G4] uv-test-matrix orchestrator (prereqs above)"
+uv-test-matrix: uv-bootstrap-pythons uv-test-all  ## Ensure Pythons installed, then run all tests
 
 # ============================================================================
 # UV · BUILD
