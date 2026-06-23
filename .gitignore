@@ -28,6 +28,7 @@ var/
 
 # General virtual environments (Modern and Classic)
 .venv/
+.cleanroom-venv/   # Throwaway clean-room venv for `make testInEnv` (VENV in .env)
 venv/
 env/
 .env/
