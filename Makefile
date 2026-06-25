@@ -193,7 +193,7 @@ uv-format: check-uv  ## Format code with ruff
 uv-typecheck: check-uv  ## Strict type check with mypy
 	$(UV) mypy $(PY_SRC) $(PY_TESTS) $(PY_EXAMPLES)
 
-uv-fullCheck: full-check: sync-dev lint type-check test  ## Run lint, typecheck, and tests  ## lint + typecheck + tests
+uv-fullCheck: check-uv uv-lint uv-typecheck uv-test  ## lint + typecheck + tests
 
 # ============================================================================
 # UV · TEST

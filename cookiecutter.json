@@ -9,5 +9,8 @@
   "projectShortDescription": "Python Boilerplate contains all the boilerplate you need to create a Python package.",
   "pypiUsername": "{{ cookiecutter.githubUsername }}",
   "version": "0.0.1",
-  "ghIdentifier": "{{ cookiecutter.githubUsername }}/{{ cookiecutter.projectIdentifier }}"
+  "ghIdentifier": "{{ cookiecutter.githubUsername }}/{{ cookiecutter.projectIdentifier }}",
+  "_copy_without_render": [
+    ".github/workflows/*"
+  ]
 }

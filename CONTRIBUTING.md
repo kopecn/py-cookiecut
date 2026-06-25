@@ -65,6 +65,27 @@ Further setup instructions can be found in the project README or in the `CONTRIB
 
 ---
 
+## Changelog (`HISTORY.md`)
+
+This repo keeps a human-readable changelog in `HISTORY.md`, following
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html). The best-known method:
+
+1. **Every PR that changes behavior** adds a bullet under the `## [Unreleased]`
+   section, in the appropriate group: `Added`, `Changed`, `Deprecated`, `Removed`,
+   `Fixed`, or `Security`.
+2. **At release time**, rename `## [Unreleased]` to the new version and date
+   (e.g. `## [0.1.0] - 2025-08-16`), add a fresh empty `## [Unreleased]` block above
+   it, update the comparison links at the bottom, then `bump2version <part>` and push
+   the tag.
+3. Keep entries imperative and user-facing ("Add X", "Fix Y"), not commit-message dumps.
+
+Note: `HISTORY.md` exists in **two** places and serves different audiences — the repo
+root (history of the *template itself*) and `{{cookiecutter.projectIdentifier}}/`
+(the changelog *generated into* each new project). Update whichever matches your change.
+
+---
+
 ## Code of Conduct
 
 All contributors are expected to adhere to a respectful and inclusive standard of communication. Disagreements are fine — disrespect is not.

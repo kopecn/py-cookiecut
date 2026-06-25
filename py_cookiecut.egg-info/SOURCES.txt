@@ -1,0 +1,11 @@
+LICENSE
+README.md
+pyproject.toml
+hooks/post_gen_project.py
+hooks/pre_gen_project.py
+py_cookiecut.egg-info/PKG-INFO
+py_cookiecut.egg-info/SOURCES.txt
+py_cookiecut.egg-info/dependency_links.txt
+py_cookiecut.egg-info/requires.txt
+py_cookiecut.egg-info/top_level.txt
+tests/testBakeProject.py

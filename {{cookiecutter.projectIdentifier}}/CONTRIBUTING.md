@@ -104,23 +104,39 @@ pytest tests/test_{{ cookiecutter.projectIdentifier }}.py
 ```
 
 
+## Changelog (`HISTORY.md`)
+
+This project keeps a human-readable changelog in `HISTORY.md`, following
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html). The best-known method:
+
+1. **Every PR that changes behavior** adds a bullet under the `## [Unreleased]`
+   section, in the appropriate group: `Added`, `Changed`, `Deprecated`, `Removed`,
+   `Fixed`, or `Security`. No "internal-only" changes (refactors, CI) need an entry
+   unless they affect users.
+2. **At release time** (maintainers), rename `## [Unreleased]` to the new version and
+   date, e.g. `## [1.2.0] - 2025-08-16`, then add a fresh empty `## [Unreleased]`
+   block above it and update the comparison links at the bottom.
+3. Keep entries imperative and user-facing ("Add X", "Fix Y"), not commit-message dumps.
+
 ## Deploying (Maintainers Only)
 
-1. Confirm all changes are committed (including `HISTORY.md`)
-2. Bump the version:
+1. Update `HISTORY.md`: roll `[Unreleased]` into the new version + date (see above).
+2. Confirm all changes are committed (including `HISTORY.md`).
+3. Bump the version:
 
 ```sh
 bump2version patch  # Use major/minor/patch as needed
 ```
 
-3. Push changes and tags:
+4. Push changes and tags:
 
 ```sh
 git push
 git push --tags
 ```
 
-4. (Optional) Use [GitHub Actions](https://docs.github.com/en/actions/use-cases-and-examples/building-and-testing/building-and-testing-python#publishing-to-pypi) to auto-deploy to PyPI.
+5. (Optional) Use [GitHub Actions](https://docs.github.com/en/actions/use-cases-and-examples/building-and-testing/building-and-testing-python#publishing-to-pypi) to auto-deploy to PyPI.
 
 ## Code of Conduct
 This project follows a [Contributor Code of Conduct](https://chatgpt.com/#:~:text=follows%20a%20Contributor-,Code,-of%20Conduct.%20By). By participating, you agree to uphold these standards.

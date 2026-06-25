@@ -114,4 +114,4 @@ def testMakeHelp(cookies: Cookies):
         # The supplied Makefile does not support win32
         if sys.platform != "win32":
             output = checkOutputInsideDir("make help", str(result.project))
-            assert b"Show available make commands with descriptions" in output
+            assert b"make targets" in output
