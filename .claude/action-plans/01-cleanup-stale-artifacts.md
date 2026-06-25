@@ -1,6 +1,15 @@
-# 01 — Cleanup stale on-disk artifacts
+# 01 — Cleanup stale on-disk artifacts — ✅ DONE (2026-06-25)
 
 **Source:** GAPS §1 · **Half:** root only · **Decisions needed:** none · **Risk:** trivial
+
+## Status — CLOSED (2026-06-25)
+
+`build/` and stray `.DS_Store` removed (both untracked). **`py_cookiecut.egg-info/` turned out to
+be _tracked_** despite `.gitignore` listing `*.egg-info/` — it had been force-committed. Corrected
+the root cause, not just the symptom: `git rm -r --cached py_cookiecut.egg-info` (untrack) then
+deleted from disk, so the gitignore rule now actually holds. No `.gitignore` edits needed (`build/`,
+`*.egg-info/`, `.DS_Store` all already present). The repeatable cleanup already exists in the
+`clean`/`clean-build`/`clean-artifacts`/`clean-test` targets (Plan 09 base).
 
 ## Problem
 
@@ -36,6 +45,7 @@ Targets:
 
 ## Acceptance criteria
 
-- `build/`, `py_cookiecut.egg-info/`, and stray `.DS_Store` files are gone from the working tree.
-- `git status` shows no new tracked changes from the deletion (they were ignored).
-- The cleanup paths are folded into the Plan 09 `clean*` targets so this never accrues by hand.
+- [x] `build/`, `py_cookiecut.egg-info/`, and stray `.DS_Store` files are gone from the working tree.
+- [x] No untracked cruft remains; `py_cookiecut.egg-info/` is now **untracked** (was committed —
+  fixed via `git rm --cached`, so the existing gitignore rule holds going forward).
+- [x] Cleanup paths are folded into the Plan 09 `clean*` targets so this never accrues by hand.

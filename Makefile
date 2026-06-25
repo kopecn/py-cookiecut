@@ -2,16 +2,16 @@
 # CONFIG
 # ============================================================================
 .PHONY: help version checkCleanGit open-github \
-	clean cleanBuild cleanArtifacts cleanTest \
+	clean clean-build clean-artifacts clean-test \
 	bump-patch bump-minor bump-major \
 	check-uv install-uv list-uv \
 	uv-bootstrap-pythons uv-bootstrap uv-sync uv-sync-headless uv-editable uv-refresh \
 	uv-lint uv-lintFix uv-format uv-typecheck uv-typecheck-ty uv-fullCheck \
 	uv-test uv-test-all uv-test-matrix \
-	uv-build uv-validateBuild \
 	uv-clean uv-flush-cache uv-flush-envs uv-flush-pythons uv-flush-everything uv-nuke \
 	uv-lifecycle-test \
-	installDev editable refresh \
+	dev setup \
+	installDev e refresh \
 	test testInEnvCleanup testInEnvInstallFromSetup testInEnvRunPytest testInEnv \
 	build validateBuild release-test release \
 	nuke list
@@ -30,7 +30,17 @@ DEFAULT_PYTHON ?= 3.14
 PYTHON ?= python3
 VENV ?= .cleanroom-venv
 
+# Quality-target paths. ROOT half has NO src/ — its Python lives in hooks/ + tests/
+# (see GAPS.md §6). The template half overrides these to src/. Overridable via .env.
+PY_SRC ?= hooks
+PY_TESTS ?= tests
+PY_EXAMPLES ?=
+PY_ALL ?= $(PY_SRC) $(PY_TESTS) $(PY_EXAMPLES)
+
 # Derived
+# Tool runner for uv- quality/test recipes: execute in the uv-managed .venv so
+# ruff/mypy/pytest resolve from the "[dev]" extra rather than the ambient PATH.
+UV := uv run
 PIP := $(PYTHON) -m pip
 BUMPVERSION := bumpversion --allow-dirty
 REPO := $(notdir $(CURDIR))
@@ -41,10 +51,29 @@ HR := ========================================
 ifeq ($(filter $(DEFAULT_PYTHON),$(PYTHONS)),)
     $(error DEFAULT_PYTHON ($(DEFAULT_PYTHON)) is not in PYTHONS ($(PYTHONS)) — fix .env)
 endif
-VERSION = v$(shell grep -m 1 'version' pyproject.toml | tr -s ' ' | tr -d '"' | tr -d "'" | cut -d'=' -f2 | xargs)
 
 # ============================================================================
-# HELP
+# MARK: - Helpers · 
+# ============================================================================
+
+define uninstall_package_list
+	@$(1) | while read pkg; do \
+		[ -n "$$pkg" ] || continue; \
+		$(PIP) uninstall -y "$$pkg" 2>&1 \
+			|| echo "SKIPPED (system-managed): $$pkg"; \
+	done
+endef
+
+define print_packages
+	@echo "========================================"
+	@echo "$(1)"
+	@echo "========================================"
+	@$(2) list 2>/dev/null || echo "No packages or pip not available"
+	@echo
+endef
+
+# ============================================================================
+# MARK: - HELP
 # ============================================================================
 help:  ## Show this help
 	@echo "$(REPO) — make targets   (bare = pip · uv-… = uv path)"
@@ -55,8 +84,9 @@ help:  ## Show this help
 		/^[a-zA-Z0-9_%-]+:.*?## / {printf "  \033[36m%-26s\033[0m %s\n", $$1, $$2}' \
 		$(MAKEFILE_LIST)
 
+
 # ============================================================================
-# COMMON · VERSION & GIT
+# MARK: - COMMON · VERSION & GIT
 # ============================================================================
 ##@ Common · Version & Git
 version:  ## Display the current project version
@@ -88,22 +118,37 @@ open-github:  ## Open the GitHub repository in the default browser (macOS/Linux)
 	else echo "No browser opener found; visit: $$url"; fi
 
 # ============================================================================
-# COMMON · CLEAN  (base for pip install / test-in-env)
+# MARK: - COMMON · CLEAN
+# Base cleanup targets used by install, test, and CI workflows.
 # ============================================================================
 ##@ Common · Clean
-clean: cleanBuild cleanArtifacts cleanTest  ## Remove build, bytecode, and test artifacts
 
-cleanBuild:  ## Delete build artifacts (build/ dist/ .eggs/ *.egg-info)
-	@echo ">> [TODO G6] cleanBuild not yet implemented"
+clean: clean-build clean-artifacts clean-test ## Remove all build, cache, and test artifacts
 
-cleanArtifacts:  ## Remove Python bytecode and __pycache__
-	@echo ">> [TODO G6] cleanArtifacts not yet implemented"
+clean-build: ## Remove packaging and distribution artifacts
+	rm -rf build/ dist/ .eggs/
+	find . \( -name '*.egg-info' -o -name '*.egg' \) -exec rm -rf {} +
 
-cleanTest:  ## Remove test/coverage/lint caches
-	@echo ">> [TODO G6] cleanTest not yet implemented"
+clean-artifacts: ## Remove Python bytecode and cache files
+	find . \( \
+		-name '*.pyc' -o \
+		-name '*.pyo' -o \
+		-name '*~' -o \
+		-name '__pycache__' \
+	\) -exec rm -rf {} +
+
+clean-test: ## Remove test, coverage, and lint caches
+	rm -f .coverage
+	rm -rf \
+		htmlcov/ \
+		.pytest_cache/ \
+		.mypy_cache/ \
+		.ruff_cache/ \
+		.tox/ \
+		.nox/
 
 # ============================================================================
-# UV · TOOLING
+# MARK: - UV · TOOLING
 # ============================================================================
 ##@ UV · Tooling
 check-uv:  ## Check if uv is installed (guard for all uv- targets)
@@ -148,7 +193,7 @@ list-uv: check-uv  ## List uv envs, installed Pythons, packages, and cache info
 	@du -sh $$(uv cache dir) 2>/dev/null || echo "Cache empty or not accessible"
 
 # ============================================================================
-# UV · BOOTSTRAP & SYNC
+# MARK: - UV · BOOTSTRAP & SYNC
 # ============================================================================
 ##@ UV · Bootstrap & Sync
 uv-bootstrap-pythons: check-uv  ## Install all configured Python versions via uv
@@ -171,14 +216,19 @@ uv-sync-headless: check-uv  ## Sync deps WITHOUT dev extras (deploy)
 	uv pip install -r requirements.txt
 	uv pip install .
 
+dev: uv-sync  ## One-command dev setup entrypoint (alias → uv-sync)
+setup: dev  ## One-command dev setup entrypoint (alias → uv-sync)
+
 uv-editable: check-uv  ## Install this package editable via uv (uv pip install -e .)
 	uv pip install -e .
 
 uv-refresh: check-uv  ## Clean cache + upgrade all deps to latest
-	@echo ">> [TODO G7] uv-refresh not yet implemented"
+	uv cache clean
+	uv pip install --upgrade -r requirements.txt
+	uv pip install --upgrade -e ".[dev]"
 
 # ============================================================================
-# UV · QUALITY
+# MARK: - UV · QUALITY
 # ============================================================================
 ##@ UV · Quality
 uv-lint: check-uv  ## Run ruff linter
@@ -196,24 +246,25 @@ uv-typecheck: check-uv  ## Strict type check with mypy
 uv-fullCheck: check-uv uv-lint uv-typecheck uv-test  ## lint + typecheck + tests
 
 # ============================================================================
-# UV · TEST
+# MARK: - UV · TEST
 # ============================================================================
 ##@ UV · Test
 uv-test: check-uv  ## Run tests on DEFAULT_PYTHON
 	$(UV) pytest
 
-uv-test-all: check-uv  ## Run tests across all configured Python versions
+uv-test-all: check-uv  ## Run tests across all configured Python versions (.venvs/<ver>)
 	@failed=""; \
 	for py in $(PYTHONS); do \
 		echo ""; \
 		echo "========================================"; \
 		echo "Testing Python $$py"; \
 		echo "========================================"; \
-		venv=".venv-py$$(echo $$py | tr -d .)"; \
+		venv=".venvs/$$py"; \
 		[ -d "$$venv" ] || uv venv --python $$py "$$venv"; \
-		VIRTUAL_ENV="$$venv" uv pip install -q -r requirements.txt; \
-		VIRTUAL_ENV="$$venv" uv pip install -q -e ".[dev]"; \
-		if VIRTUAL_ENV="$$venv" uv run --no-project pytest; then \
+		if ( . "$$venv/bin/activate" && \
+		     uv pip install -q -r requirements.txt && \
+		     uv pip install -q -e ".[dev]" && \
+		     python -m pytest ); then \
 			echo "PASS: Python $$py"; \
 		else \
 			echo "FAIL: Python $$py"; \
@@ -234,42 +285,52 @@ uv-test-all: check-uv  ## Run tests across all configured Python versions
 uv-test-matrix: uv-bootstrap-pythons uv-test-all  ## Ensure Pythons installed, then run all tests
 
 # ============================================================================
-# UV · BUILD
-# ============================================================================
-##@ UV · Build
-uv-build: check-uv  ## Build sdist+wheel via uv
-	@echo ">> [TODO build] uv-build not yet implemented"
-
-uv-validateBuild: uv-build  ## Build + validate with twine
-	@echo ">> [TODO build] uv-validateBuild not yet implemented"
-
-# ============================================================================
-# UV · FLUSH / NUKE
+# MARK: - UV · FLUSH / NUKE
 # ============================================================================
 ##@ UV · Flush / Nuke
-uv-clean:  ## Remove build artifacts, caches, lock file
-	@echo ">> [TODO G6] uv-clean not yet implemented"
 
-uv-flush-cache: check-uv  ## Clean uv cache
-	@echo ">> [TODO G6] uv-flush-cache not yet implemented"
+uv-clean:  ## Remove build artifacts, caches, lock file
+	@echo ">> Cleaning build artifacts..."
+	rm -rf dist/ build/ *.egg-info/ .eggs/
+	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+	find . -type f -name "*.pyc" -delete 2>/dev/null || true
+	rm -rf .mypy_cache/ .pytest_cache/ .ruff_cache/
+	rm -rf docs/sphinx/_build/
+	rm -f uv.lock
 
 uv-flush-envs:  ## Remove all virtual environments (.venv + .venvs/<ver>)
-	@echo ">> [TODO G6] uv-flush-envs not yet implemented"
+	@echo ">> Removing virtual environments..."
+	rm -rf .venv
+	rm -rf .venvs
+	rm -rf .venv-py*
+	@echo "Virtual environments removed."
+
+uv-flush-cache: check-uv  ## Clean uv cache
+	@echo ">> Cleaning uv cache..."
+	uv cache clean
+	@echo "uv cache cleaned."
 
 uv-flush-pythons:  ## Remove uv-managed Python installs (NUCLEAR)
-	@echo ">> [TODO G6] uv-flush-pythons not yet implemented"
+	@echo "WARNING: This removes ALL uv-managed Python installations!"
+	@echo "Location: ~/.local/share/uv/python"
+	rm -rf ~/.local/share/uv/python
+	@echo "uv-managed Pythons removed."
 
 uv-flush-everything: uv-clean uv-flush-envs uv-flush-cache  ## Full cleanup (keeps pythons)
-	@echo ">> [TODO G6] uv-flush-everything orchestrator (prereqs above)"
+	@echo "Environment flushed. Run 'make uv-flush-pythons' separately for global Pythons."
 
-uv-nuke: uv-flush-everything  ## NUCLEAR: everything, then prompt for python removal
-	@echo ">> [TODO G6] uv-nuke not yet implemented"
+uv-nuke: uv-flush-everything  ## NUCLEAR: everything then prompt for Python removal
+	@echo ""
+	@echo ">> Running uv-nuke..."
+	@$(MAKE) uv-flush-pythons
+	@echo ""
+	@echo "Environment nuked. Run 'make uv-bootstrap' to rebuild from scratch."
 
 uv-lifecycle-test: uv-flush-everything uv-bootstrap uv-test-all  ## flush -> bootstrap -> test-all
-	@echo ">> [TODO G6] uv-lifecycle-test orchestrator (prereqs above)"
+	@echo ">> Lifecycle test complete"
 
 # ============================================================================
-# PIP · INSTALL
+# MARK: - PIP · INSTALL
 # ============================================================================
 ##@ PIP · Install
 installDev: clean  ## Install dev dependencies with pip
@@ -277,7 +338,7 @@ installDev: clean  ## Install dev dependencies with pip
 	$(PIP) install --break-system-packages --force-reinstall -r requirements.txt
 	$(PIP) install --break-system-packages -e ".[dev]"
 
-editable:  ## Install this package in editable mode (pip install -e .)
+e:  ## Install this package in editable mode (pip install -e .)
 	$(PIP) install -e .
 
 refresh:  ## Refresh all pip packages from requirements + editable dev
@@ -285,46 +346,97 @@ refresh:  ## Refresh all pip packages from requirements + editable dev
 	$(PIP) install --force-reinstall -e ".[dev]"
 
 # ============================================================================
-# PIP · TEST
+# MARK: - PIP · TEST
 # ============================================================================
 ##@ PIP · Test
+
 test:  ## Run tests using the current Python environment
-	@echo ">> [TODO G4] test not yet implemented"
+	pytest
 
 testInEnvCleanup:  ## Delete the temporary venv ($(VENV))
-	@echo ">> [TODO G4] testInEnvCleanup not yet implemented"
+	rm -rf $(VENV) || true
 
 testInEnvInstallFromSetup: testInEnvCleanup  ## Create temp venv + install dev deps
-	@echo ">> [TODO G4] testInEnvInstallFromSetup not yet implemented"
+	$(PYTHON) -m venv $(VENV)
+	. $(VENV)/bin/activate && \
+	which python3 && \
+	$(VENV)/bin/pip install ".[dev]"
+	@echo "Virtual env can be activated with 'source $(VENV)/bin/activate'"
 
 testInEnvRunPytest:  ## Run pytest inside the temporary venv
-	@echo ">> [TODO G4] testInEnvRunPytest not yet implemented"
+	. $(VENV)/bin/activate && \
+	which $(PYTHON) && \
+	$(PYTHON) -m pytest
 
 testInEnv: clean testInEnvInstallFromSetup testInEnvRunPytest testInEnvCleanup  ## Full clean-room test
-	@echo ">> [TODO G4] testInEnv orchestrator (prereqs above)"
+	@echo ">> testInEnv completed"
 
 # ============================================================================
-# PIP · BUILD & RELEASE
+# MARK: - PIP · BUILD & RELEASE
 # ============================================================================
 ##@ PIP · Build & Release
-build:  ## Build sdist+wheel ($(PYTHON) -m build)
-	@echo ">> [TODO build] build not yet implemented"
+build: clean-build  ## Build sdist + wheel ($(PYTHON) -m build)
+	@echo "Building package..."
+	$(PYTHON) -m build
 
-validateBuild: build  ## Build + validate with twine
-	@echo ">> [TODO build] validateBuild not yet implemented"
+validateBuild: build  ## Validate build artifacts with twine
+	@echo "Validating dist/ with twine..."
+	$(PYTHON) -m twine check dist/*
 
-release-test: validateBuild  ## Upload to TestPyPI (user-editable index)
-	@echo ">> [TODO release] release-test not yet implemented"
+release-test: checkCleanGit validateBuild  ## Dry-run publish to TestPyPI (clean tree only)
+	@echo "Uploading $(REPO) v$$($(MAKE) -s version) to TestPyPI..."
+	@$(PYTHON) -m twine upload --repository testpypi dist/*
 
-release: validateBuild  ## Upload to PyPI (user-editable index)
-	@echo ">> [TODO release] release not yet implemented"
+# PyPI publishing is owned by CI, not this Makefile. Per the ci-cd spec, the
+# pipeline is the single authoritative path to production — no manual, out-of-band
+# uploads. `.github/workflows/tag-on-prod.yml` tags v<version> on push to `prod`;
+# a publish-on-tag workflow promotes that artifact. `make release` therefore
+# refuses to upload and prints the release procedure instead.
+release: validateBuild  ## Refuse local upload; print the CI-driven release procedure
+	@echo "Local PyPI upload is disabled — the pipeline is the authoritative publish path."
+	@echo ""
+	@echo "To release $(REPO) v$$($(MAKE) -s version):"
+	@echo "  1. Bump the version (make bump-patch|bump-minor|bump-major) and merge to prod."
+	@echo "  2. Push to prod → tag-on-prod.yml creates the v<version> tag."
+	@echo "  3. The publish-on-tag workflow uploads to PyPI."
+	@echo ""
+	@echo "For a local pre-flight, use: make release-test (TestPyPI)."
+	@exit 1
 
 # ============================================================================
-# PIP · FLUSH / LIST
+# MARK: - PIP · FLUSH / LIST
 # ============================================================================
 ##@ PIP · Flush / List
-nuke:  ## Uninstall ALL pip packages incl. broken editables (skips system)
-	@echo ">> [TODO G6] nuke not yet implemented"
+# `nuke` is the INFERIOR pip fallback (Lesson 2): it per-package-uninstalls from
+# the AMBIENT interpreter ($(PIP)). Prefer `make uv-flush-envs` — deleting the
+# venv dir is the reliable flush primitive. Use this only when you're stuck in a
+# non-deletable (e.g. system) env. Non-editable URL/VCS installs are skipped.
+nuke: ## Per-package uninstall from ambient env (inferior — prefer uv-flush-envs)
+	@echo "Uninstalling regular packages (skipping system-managed)..."
+	$(call uninstall_package_list,$(PIP) freeze --exclude-editable | grep -v ' @ ')
 
-list:  ## List pip packages in the current environment
-	@echo ">> [TODO G6] list not yet implemented"
+	@echo "Uninstalling editable packages by name..."
+	$(call uninstall_package_list,$(PIP) list --editable --format=freeze | cut -d= -f1)
+
+	@echo "pip-nuke complete."
+
+list: ## List pip packages in available environments
+	$(call print_packages,SYSTEM PYTHON PACKAGES,$(PIP))
+
+	@if [ -d ".venv" ]; then \
+		echo "$(HR)"; \
+		echo "VENV PACKAGES (.venv)"; \
+		echo "$(HR)"; \
+		.venv/bin/pip list 2>/dev/null || echo "No packages or pip not available"; \
+		echo; \
+	fi
+
+	@for venv in .venvs/*; do \
+		[ -d "$$venv" ] || continue; \
+		echo "$(HR)"; \
+		echo "VENV PACKAGES ($$venv)"; \
+		echo "$(HR)"; \
+		$$venv/bin/pip list 2>/dev/null || echo "No packages or pip not available"; \
+		echo; \
+	done
+	

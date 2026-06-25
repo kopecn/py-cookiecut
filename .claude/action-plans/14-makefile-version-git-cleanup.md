@@ -20,22 +20,29 @@ G8 (version/git/util) is mostly DONE: `help`, `bump-patch/minor/major` + `bump-%
    it on 3.10. Resolved by Plan 04 (raise floor to 3.11) **or** a `tomli` fallback. Implement
    whichever Plan 04 chooses.
 
+## Status — root half DONE (2026-06-25)
+
+Steps 1–2 complete in the **root** Makefile (done as part of the Plan 13 release alignment):
+`checkCleanGit` is now the prereq for `release-test`; the orphaned grep `VERSION` var is deleted and
+`release-test`/`release` read `$(MAKE) -s version`. **Still open:** the template-half Makefile
+(step 5) and the tomllib floor (step 3, blocked on Plan 04's floor decision).
+
 ## Steps
 
-1. **Wire `checkCleanGit`** as the prerequisite for `release` and `release-test` (Plan 13). Keep it
-   strict (`git status --porcelain` must be empty). No other change needed — it stays a reusable
-   guard.
-2. **Delete the `VERSION` grep var:**
-   - Confirm nothing references it: `grep -n 'VERSION' Makefile` in both halves.
-   - Repoint any remaining consumer to `$(shell $(MAKE) -s version)` (tomllib).
-   - Remove the `VERSION := $(shell grep ...)` line.
+1. [x] **Wire `checkCleanGit`** as the prerequisite for `release`/`release-test` (Plan 13). Strict
+   (`git status --porcelain` must be empty); stays a reusable guard. *(root — wired into
+   `release-test`; `release` defers to CI so needs no clean-tree gate.)*
+2. [x] **Delete the `VERSION` grep var:** confirmed nothing referenced it; release recipes repointed
+   to `$(MAKE) -s version` (tomllib); the `VERSION := $(shell grep ...)` line removed. *(root)*
 3. **tomllib floor** (mirror Plan 04 verdict):
    - Verdict A (floor 3.11): no recipe change — just confirm `make version` runs on the floor.
    - Verdict B (keep 3.10): make the `version` recipe try `tomllib` then fall back to `tomli`, and
      ensure `tomli` is in `[dev]` conditionally (`tomli; python_version < "3.11"`).
-4. Verify `make version` returns the bare version (used by Plan 05 changelog roll and Plan 13
-   release) and `make -s version` is clean for command substitution.
-5. Apply identically in both halves (Makefile is byte-identical).
+4. [x] Verify `make version` returns the bare version (used by Plan 05 changelog roll and Plan 13
+   release) and `make -s version` is clean for command substitution. *(root — verified via release
+   `make -n`.)*
+5. Apply in the **template half** (still pending — the two Makefiles diverged per Plan 11/13, so this
+   is no longer a byte-identical copy; port the same VERSION-var deletion + `checkCleanGit` wiring).
 
 ## Files affected
 

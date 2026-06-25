@@ -10,10 +10,10 @@ Legend: `[ ]` open · `[~]` in progress · `[x]` done
 
 ## 1. Stale / on-disk artifacts (cleanup)
 
-- [ ] `build/lib/hooks/` — byte-identical copy of `hooks/`, leftover from `python -m build`.
-      Gitignored but present on disk; delete.
-- [ ] `py_cookiecut.egg-info/` — build leftover, gitignored but on disk; delete.
-- [ ] `.DS_Store` on disk (gitignored); delete.
+- [x] `build/` (incl. `build/lib/hooks/`) — leftover from `python -m build`. **Deleted (2026-06-25).**
+- [x] `py_cookiecut.egg-info/` — build leftover. **Was actually TRACKED** (force-committed despite
+      `.gitignore`); untracked via `git rm --cached` + deleted (2026-06-25), so the ignore rule now holds.
+- [x] `.DS_Store` on disk (gitignored). **Deleted (2026-06-25).**
 
 ## 2. Naming-convention enforcement (the big decision)
 
@@ -28,8 +28,9 @@ Legend: `[ ]` open · `[~]` in progress · `[x]` done
 ## 3. Tooling drift / contradictions
 
 - [~] Lint stack: toolchain decided = **ruff** (lint+format) + **mypy --strict**; black/pylint
-      removed from the `[dev]` extra. STILL TODO: add `[tool.ruff]` config to pyproject and
-      delete the obsolete `.pylintrc` (both halves). ty (preview) deferred to G5.
+      removed from the `[dev]` extra. `.pylintrc` **deleted in both halves (2026-06-25, were tracked
+      → `git rm`)**. STILL TODO: add `[tool.ruff]`/`[tool.mypy]` config to pyproject (both halves).
+      ty (preview) deferred to G5.
 - [x] `requirements_dev.txt` / `requirements_prod.txt` — **deleted**.
 - [x] Dev-dependency 3-way duplication — **consolidated**: pyproject `[dev]` extra (renamed
       from `develop`) is the source; a minimal `requirements.txt` starter is shipped; Makefile
@@ -66,8 +67,10 @@ Legend: `[ ]` open · `[~]` in progress · `[x]` done
 ## 5. Makefile hygiene
 
 - [x] `.PHONY` — regenerated from the final target set in the new Makefile (both halves).
-- [~] `release` shell/`set -euo pipefail` concern — moot until release recipes are written
-      (currently TODO); revisit when implementing `release`/`release-test` in the command pass.
+- [x] `release` shell/`set -euo pipefail` concern — **resolved (root, 2026-06-24): decided AGAINST
+      global `.ONESHELL`.** It's file-global (would flip `installDev`'s leading-`-` to whole-recipe
+      error-ignore) and the release recipes are single-command targets sequenced by Make's prereq
+      chain, which already fails fast. Revisit only if a multi-line side-effecting recipe is added.
 - [x] Root vs template Makefile — decision: **intentionally identical** (uses `$(notdir
       $(CURDIR))` + reads pyproject, no per-half vars). Kept byte-identical via the scaffold.
 - [x] `testMakeHelp` — now PASSES (new help text matches); confirmed in bake run (6/6 green).
@@ -95,9 +98,11 @@ better implementation — critique each.** Grouped in build order:
       `uv pip sync` vs `uv pip install`; commit generated `requirements.txt`/`uv.lock` y/n.
 - [ ] **Clean (G6 base).** `cleanBuild` / `cleanArtifacts` / `cleanTest` — must NOT delete a
       committed lockfile (Lesson 2).
-- [ ] **Flush/nuke (G6, Lesson 2).** `uv-clean`, `uv-flush-cache`, `uv-flush-envs` (rm -rf
+- [~] **Flush/nuke (G6, Lesson 2).** `uv-clean`, `uv-flush-cache`, `uv-flush-envs` (rm -rf
       `.venv` + `.venvs/*`), `uv-flush-pythons`, `uv-flush-everything`, `uv-nuke`, pip `nuke`/`list`.
       Venv-deletion is the primitive; no per-package uninstall for correctness.
+      DONE: pip `nuke` + `list` (2026-06-24) — `nuke` documented as the inferior pip fallback;
+      `list` covers system + `.venv` + `.venv-py*`. The `uv-flush-*` tier is still stubbed.
 - [ ] **Refresh (G7, Lesson 3).** `uv-refresh` via `uv pip sync` / `--reinstall-package`; pip
       `refresh` as documented inferior fallback.
 - [ ] **Multi-repo editable (Lesson 4).** Add `editable-local`/`sync-local` overlay convention
@@ -106,10 +111,26 @@ better implementation — critique each.** Grouped in build order:
 - [ ] **Quality (G5).** `uv-lint`/`uv-lintFix`/`uv-format` (ruff), `uv-typecheck` (mypy --strict),
       `uv-typecheck-ty` (decide ty in/out), `uv-fullCheck`. Add `[tool.ruff]`/`[tool.mypy]` config;
       correct paths per half (see §6); delete `.pylintrc`.
-- [ ] **Test (G4).** `test`, `uv-test` (ensure synced env first — no fresh-env no-op), `uv-test-all`
+- [~] **Test (G4).** `test`, `uv-test` (ensure synced env first — no fresh-env no-op), `uv-test-all`
       / `uv-test-matrix` (`.venvs/<ver>`), `testInEnv*`.
-- [ ] **Build & release.** `build`/`uv-build`, `validateBuild`/`uv-validateBuild`, `release-test`
-      (TestPyPI), `release` (PyPI). Reconcile `set -euo pipefail`/shell (§5).
+      DONE (2026-06-24, review adoption): `uv-test-all` migrated off the `.venv-pyXXX` naming to
+      `.venvs/<ver>` (now consistent with `list-uv` + `uv-flush-envs`), and the per-version env
+      uses ONE deterministic selection model — activate `.venvs/<ver>` then `uv pip install` +
+      `python -m pytest` in that interpreter (was a `VIRTUAL_ENV=… uv pip install` + `uv run
+      --no-project` hybrid). Applied to both halves. Pip `list` now scans `.venvs/*`.
+      STILL TODO: `uv-test` ensure-synced; `testInEnv*`; consider `uv run --python X` to avoid
+      per-version reinstall (matrix scaling).
+  - [x] **Onboarding entrypoint (review adoption):** added `make dev` / `make setup` aliases
+        (→ `uv-sync`) so first-time setup is one command. Both halves.
+- [~] **Build & release.** DONE (root, 2026-06-24): `build` (no `uv-build`); `validateBuild` (no
+      `uv-validateBuild` — both installer-agnostic, dead `.PHONY` entry removed); `release-test`
+      (TestPyPI, gated on `checkCleanGit`, prints `make -s version`); `release` **defers to CI**
+      (refuses local upload, exits 1) per the shared-memory `operations/ci-cd.md` spec — *single
+      authoritative pipeline path, no out-of-band deploys*. `RELEASE_ENABLED` gate removed from
+      Makefile + `.env`. Shell-strictness resolved (§5: no global `.ONESHELL`).
+      STILL TODO: **publish-on-tag workflow** (`publish.yml`, `on: push: tags: 'v*'`) — `release`
+      points at it but it doesn't exist (`tag-on-prod.yml` only tags); document D2 auth env;
+      template half.
 - [~] **Version/git/util (G8).** DONE: `help` banner; `bump-patch/minor/major` + `bump-%`
       (`BUMPVERSION := bumpversion --allow-dirty`, kebab-case — deliberate); `version` via
       `tomllib` (`$(PYTHON) -c "import tomllib; ..."`); `checkCleanGit` via
@@ -117,10 +138,9 @@ better implementation — critique each.** Grouped in build order:
       `xdg-open`, default browser, derives URL from first remote). **`tag` AXED** — tagging is
       owned by `.github/workflows/tag-on-prod.yml` (auto `v<version>` on push to `prod`), so a
       manual `make tag` is redundant/double-tags. G8 complete.
-  - [ ] **Orphaned by removing `tag`:** (a) `checkCleanGit` has no consumer now — kept as a
-        standalone guard / future `release` prereq. (b) header `VERSION` make-var (grep,
-        `v`-prefixed) is now UNUSED — `version` target uses tomllib. Converge: have `release`/
-        `release-test` derive from tomllib (`make -s version`); then delete the `VERSION` var.
+  - [x] **Orphaned by removing `tag` — RESOLVED (root, 2026-06-24):** (a) `checkCleanGit` now has a
+        consumer — it gates `release-test`. (b) the grep `VERSION` make-var was **deleted**;
+        `release-test`/`release` derive the version from `$(MAKE) -s version` (tomllib).
   - [ ] **tomllib needs Python ≥3.11** but `requires-python = ">=3.10"`. `make version` breaks
         on a 3.10 interpreter. Resolve via §8 (raise floor to 3.11) or add a `tomli` fallback.
 

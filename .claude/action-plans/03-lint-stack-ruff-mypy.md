@@ -32,7 +32,10 @@ config alone. Achieve this with ruff/mypy's own file discovery + per-half config
 2. **Template `pyproject.toml`** — add the analogous blocks but pathed at `src` (and `tests`):
    `[tool.ruff] src = ["src", "tests"]`; `[tool.mypy] files = ["src", "tests"]`. Remember the
    body is Jinja — keep `{{ }}` out of these static blocks unless a value is genuinely templated.
-3. **Delete `.pylintrc`** in both halves.
+3. [x] **Delete `.pylintrc`** in both halves. **DONE (2026-06-25)** — both were tracked; removed via
+   `git rm` (`./.pylintrc` + `{{cookiecutter.projectIdentifier}}/.pylintrc`). pylint/black already
+   absent from both `[dev]` extras, so nothing references them. *(Steps 1–2, 4–5 — ruff/mypy config —
+   still open.)*
 4. **Naming-convention coherence:** the project uses camelCase intentionally. Ensure ruff lint
    rules don't flag it as errors that break CI — disable/relax `N` (pep8-naming) or scope it.
 5. Defer **ty (preview)** explicitly (it belongs to Plan 11 / GAPS G5 `uv-typecheck-ty`); leave a
