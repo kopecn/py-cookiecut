@@ -11,21 +11,26 @@ resolves or supersedes a GAPS item, tick the box in `GAPS.md` and note it here.
 > files under `{{cookiecutter.projectIdentifier}}/` that render into a new project. Most plans
 > touch both; each plan calls out which.
 
+> **Closed plans are removed; their durable verdicts live in
+> [`../specs/project-conventions.md`](../specs/project-conventions.md).** Plans 03/04/06/13 are
+> done and deleted (2026-06-25); 02 and 09 had their *decisions* settled (recorded in that spec)
+> but keep open files because implementation work remains.
+
 | # | Plan | GAPS § | Blocking decisions? |
 |---|------|--------|---------------------|
 | 01 | [Cleanup stale on-disk artifacts](./01-cleanup-stale-artifacts.md) ✅ | §1 | No |
-| 02 | [Naming convention + hook validation](./02-naming-convention-and-hooks.md) | §2 | **Yes** — camelCase verdict |
-| 03 | [Lint stack: ruff + mypy config, drop pylintrc](./03-lint-stack-ruff-mypy.md) | §3, §6 | Minor |
-| 04 | [Python version reconciliation](./04-python-version-reconciliation.md) | §3, §7, §8 | **Yes** — canonical version set |
+| 02 | [Naming convention + hook validation](./02-naming-convention-and-hooks.md) | §2 | ✅ decided (keep camelCase) — hook impl open |
+| 03 | ✅ **CLOSED** → spec §4 (ruff+mypy config landed) | §3, §6 | — |
+| 04 | ✅ **CLOSED** → spec §2 (3.13 default / 3.10 floor) | §3, §7, §8 | — |
 | 05 | [bump2version HISTORY auto-roll](./05-bumpversion-history-followup.md) | §3 | No |
-| 06 | [Branch-naming model](./06-branch-naming-model.md) | §4 | **Yes** — pick branch model |
+| 06 | ✅ **CLOSED** → spec §3 (dev/prod model) | §4 | — |
 | 07 | [Generated pyproject defaults](./07-generated-pyproject-defaults.md) | §4 | Minor |
 | 08 | [Generated smoke test](./08-generated-smoke-test.md) | §4 | No |
-| 09 | [Makefile: dependency SoT, clean, flush, refresh](./09-makefile-deps-clean-flush.md) | §5, §7 | **Yes** — lock/commit policy |
+| 09 | [Makefile: dependency SoT, clean, flush, refresh](./09-makefile-deps-clean-flush.md) | §5, §7 | ✅ uv.lock decided (spec §6) — Makefile impl open |
 | 10 | [Makefile: multi-repo editable siblings](./10-makefile-multi-repo-editable.md) | §7 | Minor |
 | 11 | [Makefile: quality targets](./11-makefile-quality-targets.md) | §3, §6, §7 | No (after 03) |
 | 12 | [Makefile: test targets](./12-makefile-test-targets.md) | §7 | No |
-| 13 | [Makefile: build & release](./13-makefile-build-and-release.md) | §5, §7 | **Yes** — TestPyPI/PyPI auth |
+| 13 | ✅ **CLOSED** → spec §5 (publish.yml scaffolded) | §5, §7 | — |
 | 14 | [Makefile: version/git orphan cleanup](./14-makefile-version-git-cleanup.md) | §7 | No (after 04) |
 
 ## Suggested execution order
@@ -40,6 +45,19 @@ Plans 03, 11, and the ruff/mypy config are intertwined: 03 lands the *config*; 1
 *Makefile targets* that consume it. Do 03 before 11.
 
 ## Progress notes
+
+- **Cross-cutting decisions resolved & applied — 2026-06-25.** User settled the five gating
+  decisions; all applied to code and the verdicts migrated to
+  [`../specs/project-conventions.md`](../specs/project-conventions.md). Closed + deleted plans
+  **03, 04, 06, 13**. **02** verdict = keep camelCase (hook validation impl still open). **09**
+  verdict = no `uv.lock` committed / stay on `uv pip` + gitignore (broader Makefile dep work
+  still open). Concrete changes: `.env`+`.python-version`+Makefile fallbacks → 3.13 default /
+  3.10–3.13 matrix; `make version` tomllib→grep fallback (runs on 3.10 floor); `[tool.ruff]`+
+  `[tool.mypy]` added to both pyprojects (config-only per-half paths, `N` omitted for camelCase);
+  README + generated changelog URL → dev/prod; `uv.lock` gitignored both halves; guarded
+  `publish.yml` scaffold added both halves. Verified: `make -s version`→0.0.2, DEFAULT_PYTHON
+  guard passes, `ruff check .` runs via config (surfaced 7 real pre-existing lint findings — no
+  camelCase false positives).
 
 - **Low-hanging cleanup — 2026-06-25.** **Plan 01 CLOSED:** removed `build/` + `.DS_Store`
   (untracked); `py_cookiecut.egg-info/` was discovered **tracked** (force-committed despite

@@ -17,9 +17,9 @@ Legend: `[ ]` open · `[~]` in progress · `[x]` done
 
 ## 2. Naming-convention enforcement (the big decision)
 
-- [ ] Template forces **camelCase** package/module names (`myPackage`, `myModule`), which
-      violates PEP 8 / PyPI import norms. Decide: keep as deliberate convention, or switch
-      generated packages to lowercase while keeping camelCase for tooling. **Decision needed.**
+- [x] Template forces **camelCase** package/module names (`myPackage`, `myModule`).
+      **DECIDED (2026-06-25): KEEP** as the deliberate house convention — see
+      `.claude/specs/project-conventions.md` §1. Tooling accommodates it (ruff `N` omitted).
 - [ ] `pre_gen_project.py` error message says "use `_` instead" but the regex
       `^[_a-zA-Z][_a-zA-Z0-9]+$` only *rejects `-`* — it never enforces that `_` was used.
       Align message with actual validation (and validate `packageName`/`moduleName` too, not
@@ -27,16 +27,20 @@ Legend: `[ ]` open · `[~]` in progress · `[x]` done
 
 ## 3. Tooling drift / contradictions
 
-- [~] Lint stack: toolchain decided = **ruff** (lint+format) + **mypy --strict**; black/pylint
-      removed from the `[dev]` extra. `.pylintrc` **deleted in both halves (2026-06-25, were tracked
-      → `git rm`)**. STILL TODO: add `[tool.ruff]`/`[tool.mypy]` config to pyproject (both halves).
-      ty (preview) deferred to G5.
+- [x] Lint stack: **ruff** (lint+format) + **mypy --strict**; black/pylint removed; `.pylintrc`
+      deleted. `[tool.ruff]`/`[tool.mypy]` config **added to both pyprojects (2026-06-25)** with
+      config-only per-half path resolution (root→`hooks,tests`; template→`src,tests`), `py310`
+      floor, `N` omitted for camelCase. See `.claude/specs/project-conventions.md` §4. ty (preview)
+      deferred to G5. *(Surfaced 7 real pre-existing lint findings in hooks/tests — cleanup is
+      separate.)*
 - [x] `requirements_dev.txt` / `requirements_prod.txt` — **deleted**.
 - [x] Dev-dependency 3-way duplication — **consolidated**: pyproject `[dev]` extra (renamed
       from `develop`) is the source; a minimal `requirements.txt` starter is shipped; Makefile
       `installDev`/`uv-sync` install `-r requirements.txt` + `-e ".[dev]"`. NOTE: extra renamed
       `develop`→`dev` in both pyprojects to match recipes.
-- [ ] `.python-version` pins **3.13** but `requires-python = ">=3.10"`. Reconcile.
+- [x] `.python-version` (3.13) vs `requires-python` (>=3.10) — **RECONCILED (2026-06-25)**:
+      canonical set is default 3.13 / floor 3.10 (see §8 and `.claude/specs/project-conventions.md`
+      §2). `.env`, `.python-version`, Makefile fallbacks aligned; template now ships `.python-version`.
 - [x] `personal_repos = []` empty optional-dependency group — **removed** from both pyprojects.
 - [x] `bump2version` config added: `.bumpversion.cfg` in root and template, bumping the
       version in `pyproject.toml` (`commit = True`, `tag = False`). Verified the search/replace
@@ -48,7 +52,7 @@ Legend: `[ ]` open · `[~]` in progress · `[x]` done
 
 - [x] **CI added** — `.github/workflows/ci.yml` + `tag-on-prod.yml` (release tag on push to
       `prod`) + `.github/CODEOWNERS` in BOTH halves.
-      OPEN: triggers on `[dev, prod]` — reconcile branch names (see below).
+      RESOLVED: dev/prod is the chosen model (see §4 branch-naming, below).
 - [x] **Jinja-collision FIXED canonically:** `cookiecutter.json` now has
       `"_copy_without_render": [".github/workflows/*"]` so workflow files (full of GitHub
       `${{ }}` expressions) are copied verbatim and never break the bake. CODEOWNERS lives in
@@ -56,9 +60,9 @@ Legend: `[ ]` open · `[~]` in progress · `[x]` done
       → Workflows may now contain `${{ }}` freely; the old `{% raw %}` workaround is unnecessary.
       (`testMakeHelp` assertion updated to match the new "make targets" help banner.)
 - [x] `make docs` / sphinx target — **dropped** from the new Makefile (no docs/ toolchain).
-- [ ] **Branch naming unresolved across the repo:** new CI triggers on `dev`/`prod`; old
-      `tag`/`release`/README reference `master`; actual repo uses `development`/`main`.
-      Pick ONE model and apply to CI, Makefile `tag`/`release`, and README.
+- [x] **Branch naming — DECIDED (2026-06-25): `dev`/`prod`.** Applied across CI (already),
+      `tag-on-prod.yml`, README release step, and generated changelog URL. No `master`/`main` in
+      user-facing docs/automation. See `.claude/specs/project-conventions.md` §3.
 - [ ] Generated `pyproject.toml` ships empty `keywords`, `classifiers`, `dependencies`, and
       `[project.urls]` blocks — fill with sensible defaults or template them.
 - [ ] Generated test (`test{{moduleName}}.py`) has commented-out imports and a `test_content()`
