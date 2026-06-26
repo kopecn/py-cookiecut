@@ -35,7 +35,11 @@ env/
 
 # Specific package manager caches / lock files
 poetry.lock
-Pipfile.lock 
+Pipfile.lock
+# uv.lock is intentionally NOT committed: this is a library, so we declare version
+# ranges (requires-python) and stay on uv's `uv pip` interface, which never writes a
+# lockfile (only `uv sync`/`uv lock` do). Ignored as belt-and-suspenders.
+uv.lock
 *.egg-info/ # Generic wheel/package info folders
 
 # PDK / Environment Specific Cache Folders

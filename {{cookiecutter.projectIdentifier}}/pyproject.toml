@@ -8,7 +8,7 @@ name = "{{ cookiecutter.projectIdentifier }}"
 version = "{{ cookiecutter.version }}"
 description = "{{cookiecutter.projectShortDescription}}"
 readme = {file = "README.md", content-type = "text/markdown"}
-requires-python = ">= 3.10"
+requires-python = ">=3.10"
 authors = [
   {name = "{{cookiecutter.fullName}}", email = "{{cookiecutter.email}}"}
 ]
@@ -36,7 +36,7 @@ dev = [
 [project.urls]
 
 bugs = "https://github.com/{{cookiecutter.ghIdentifier}}/issues"
-changelog = "https://github.com/{{cookiecutter.ghIdentifier}}/blob/main/HISTORY.md"
+changelog = "https://github.com/{{cookiecutter.ghIdentifier}}/blob/prod/HISTORY.md"
 homepage = "https://github.com/{{cookiecutter.ghIdentifier}}"
 
 [tool.setuptools]
@@ -49,3 +49,19 @@ package-dir = {"" = "src"}
 testpaths = ["tests/*"]
 python_functions = ["test*"]
 python_files = ["test*.py"]
+
+# Config-only path resolution (GAPS §6): generated projects use a src/ layout, so the
+# per-half paths point at src/ + tests/. `ruff check .` / `mypy .` (no path args)
+# resolve scope from this config — the Makefile is byte-identical across halves.
+[tool.ruff]
+target-version = "py310"  # support floor; default dev interpreter is 3.13
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+files = ["src", "tests"]

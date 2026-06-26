@@ -53,3 +53,23 @@ homepage = "https://github.com/kopecn/py-cookiecut"
 testpaths = ["tests/*"]
 python_functions = ["test*"]
 python_files = ["test*.py"]
+
+# Config-only path resolution (GAPS §6): this repo's Python lives in hooks/ + tests/
+# (no src/). The Makefile is byte-identical across halves, so the per-half path
+# difference is expressed here, not in recipe args. `ruff check .` / `mypy .` (no
+# path args) resolve scope from this config.
+[tool.ruff]
+target-version = "py310"  # support floor; default dev interpreter is 3.13
+line-length = 100
+src = ["hooks", "tests"]
+
+[tool.ruff.lint]
+# camelCase is a deliberate house convention ("Nick's workflow") — pep8-naming (N)
+# is intentionally omitted so it never fails CI.
+select = ["E", "F", "I", "UP", "B"]
+# TODO(G5): decide ty (preview type-checker) in/out — owned by Plan 11.
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+files = ["hooks", "tests"]

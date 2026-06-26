@@ -33,7 +33,9 @@ Then:
    Add your repository to your [Read the Docs](https://readthedocs.io/) account and enable the service hook for automated builds.
 
 4. **Release your package**  
-   Push a new Git tag to the `master` branch to trigger an automatic release to PyPI (if configured).
+   This template uses a **`dev`/`prod`** branch model. Merge to `prod` to trigger
+   `tag-on-prod.yml`, which auto-creates a `v<version>` tag; the (scaffolded) `publish.yml`
+   workflow then promotes that tagged build to PyPI once you wire its credentials.
 
 ## Suggestions / Forking?
 

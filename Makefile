@@ -25,8 +25,8 @@ ifneq (,$(wildcard .env))
 endif
 
 # Defaults (overridable via .env — the user-editable surface). Keep in sync with .env.
-PYTHONS ?= 3.10 3.11 3.12 3.14
-DEFAULT_PYTHON ?= 3.14
+PYTHONS ?= 3.10 3.11 3.12 3.13
+DEFAULT_PYTHON ?= 3.13
 PYTHON ?= python3
 VENV ?= .cleanroom-venv
 
@@ -90,7 +90,8 @@ help:  ## Show this help
 # ============================================================================
 ##@ Common · Version & Git
 version:  ## Display the current project version
-	@$(PYTHON) -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])"
+	@$(PYTHON) -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])" 2>/dev/null \
+		|| grep -m1 '^version' pyproject.toml | cut -d'"' -f2
 
 checkCleanGit:  ## Guard: fail if the git working tree is dirty
 	@[ -z "$$(git status --porcelain)" ] || \
