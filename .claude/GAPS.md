@@ -98,8 +98,11 @@ better implementation — critique each.** Grouped in build order:
 
 - [ ] **Item 1 — dependency SoT (Lesson 1).** Add `lock` (`uv pip compile`); rewrite `uv-sync`
       (→ `uv pip sync` + `-e . --no-deps`) and `installDev` (`-r requirements.txt` + `-e . --no-deps`,
-      drop `--break-system-packages`/`--force-reinstall`). DECISIONS PENDING: compile-as-lock y/n;
-      `uv pip sync` vs `uv pip install`; commit generated `requirements.txt`/`uv.lock` y/n.
+      drop `--break-system-packages`/`--force-reinstall`).
+      DECIDED (2026-06-25): **`uv.lock` is NOT committed** — stay on uv's `uv pip` interface (never
+      writes a lockfile) and gitignore `uv.lock` (both halves); library declares ranges. See
+      `.claude/specs/project-conventions.md` §6. STILL PENDING: compile-as-lock y/n (generated
+      `requirements.txt`); `uv pip sync` vs `uv pip install`.
 - [ ] **Clean (G6 base).** `cleanBuild` / `cleanArtifacts` / `cleanTest` — must NOT delete a
       committed lockfile (Lesson 2).
 - [~] **Flush/nuke (G6, Lesson 2).** `uv-clean`, `uv-flush-cache`, `uv-flush-envs` (rm -rf
@@ -132,9 +135,10 @@ better implementation — critique each.** Grouped in build order:
       (refuses local upload, exits 1) per the shared-memory `operations/ci-cd.md` spec — *single
       authoritative pipeline path, no out-of-band deploys*. `RELEASE_ENABLED` gate removed from
       Makefile + `.env`. Shell-strictness resolved (§5: no global `.ONESHELL`).
-      STILL TODO: **publish-on-tag workflow** (`publish.yml`, `on: push: tags: 'v*'`) — `release`
-      points at it but it doesn't exist (`tag-on-prod.yml` only tags); document D2 auth env;
-      template half.
+      DONE (2026-06-25): **`publish.yml` added as a guarded SCAFFOLD** in both halves
+      (`on: push: tags: 'v*'`, fails loudly until PyPI auth wired — Trusted Publishing or
+      `PYPI_API_TOKEN`). D2 auth documented in the scaffold header. **Plan 13 CLOSED** →
+      `.claude/specs/project-conventions.md` §5. Implementing the upload steps is left to the user.
 - [~] **Version/git/util (G8).** DONE: `help` banner; `bump-patch/minor/major` + `bump-%`
       (`BUMPVERSION := bumpversion --allow-dirty`, kebab-case — deliberate); `version` via
       `tomllib` (`$(PYTHON) -c "import tomllib; ..."`); `checkCleanGit` via
@@ -145,11 +149,13 @@ better implementation — critique each.** Grouped in build order:
   - [x] **Orphaned by removing `tag` — RESOLVED (root, 2026-06-24):** (a) `checkCleanGit` now has a
         consumer — it gates `release-test`. (b) the grep `VERSION` make-var was **deleted**;
         `release-test`/`release` derive the version from `$(MAKE) -s version` (tomllib).
-  - [ ] **tomllib needs Python ≥3.11** but `requires-python = ">=3.10"`. `make version` breaks
-        on a 3.10 interpreter. Resolve via §8 (raise floor to 3.11) or add a `tomli` fallback.
+  - [x] **tomllib needs Python ≥3.11** but floor is 3.10 — **RESOLVED (2026-06-25)**: `make
+        version` now tries `tomllib` and falls back to `grep`/`cut` (dependency-free), so it runs
+        on a 3.10 interpreter. Both halves. See `.claude/specs/project-conventions.md` §2.
 
 ## 8. Config reconciliation
 
-- [ ] Python version sources disagree: `.python-version`=3.13, `.env` `DEFAULT_PYTHON=3.14` /
-      `PYTHONS=3.10 3.11 3.12 3.14`, `requires-python>=3.10`, Makefile fallback `3.10 3.11 3.12`.
-      Pick the canonical set and align `.python-version` + Makefile fallback to `.env`.
+- [x] Python version sources disagree — **RESOLVED (2026-06-25)**. Canonical set: **default
+      3.13, floor 3.10**. Aligned: `.env` (`DEFAULT_PYTHON=3.13`, `PYTHONS=3.10 3.11 3.12 3.13`),
+      `.python-version`=3.13 (both halves, template now ships one), Makefile `?=` fallbacks,
+      `requires-python>=3.10`, classifiers 3.10–3.13. See `.claude/specs/project-conventions.md` §2.
