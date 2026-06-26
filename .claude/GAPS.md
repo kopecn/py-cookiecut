@@ -13,6 +13,9 @@ Legend: `[ ]` open · `[~]` in progress · `[x]` done
 - [x] `build/` (incl. `build/lib/hooks/`) — leftover from `python -m build`. **Deleted (2026-06-25).**
 - [x] `py_cookiecut.egg-info/` — build leftover. **Was actually TRACKED** (force-committed despite
       `.gitignore`); untracked via `git rm --cached` + deleted (2026-06-25), so the ignore rule now holds.
+      **Regressed and re-untracked 2026-06-26** (an editable install/build had re-staged the 5
+      metadata files into the index); `git rm -r --cached` again — `.gitignore` `*.egg-info/` (line 43)
+      now holds and the dir is ignored on disk.
 - [x] `.DS_Store` on disk (gitignored). **Deleted (2026-06-25).**
 
 ## 2. Naming-convention enforcement (the big decision)
@@ -51,8 +54,11 @@ Legend: `[ ]` open · `[~]` in progress · `[x]` done
 - [x] `bump2version` config added: `.bumpversion.cfg` in root and template, bumping the
       version in `pyproject.toml` (`commit = True`, `tag = False`). Verified the search/replace
       matches via dry-run.
-  - [ ] Follow-up: consider having bump2version also auto-roll the `HISTORY.md`
-        `[Unreleased]` header on release.
+  - [x] Follow-up **DONE (2026-06-26, plan 05):** `bump-{patch,minor,major}` (now a static
+        pattern rule sharing one recipe) auto-rolls `HISTORY.md` — an `awk` step opens a fresh
+        dated `## [<version>] - <date>` section under `## [Unreleased]` (Keep-a-Changelog
+        anchor), folding accumulated notes into it, then `git commit --amend --no-edit` lands the
+        changelog in the same commit as the version bump. Both halves (Makefile byte-identical).
 
 ## 4. Template gaps (missing promised features)
 
@@ -96,10 +102,12 @@ Legend: `[ ]` open · `[~]` in progress · `[x]` done
 
 ## 6. Root vs. template `lint`/`format`/`typecheck` targets
 
-- [~] Root quality targets must lint the right paths: root code lives in `hooks/`+`tests/`
-      (no `src/`); template code lives in `src/`. When implementing `uv-lint`/`uv-typecheck`
-      (G5), make the target paths correct for EACH half (they're not identical here even though
-      the Makefile is). Resolve via ruff/mypy config (`[tool.ruff]`, `[tool.mypy]`) per half.
+- [x] **RESOLVED (2026-06-26).** Root code lives in `hooks/`+`tests/` (no `src/`); template code
+      lives in `src/`. Per-half scoping is done with explicit `PY_*` Make vars, **not** ruff/mypy
+      config: the Makefile defaults `PY_SRC ?= hooks` (root) and the **template `.env` overrides
+      `PY_SRC=src`**, so the two `.env` files differ while the Makefile stays byte-identical.
+      Verified: a baked project's `make -n uv-lint`/`uv-typecheck` scan `src tests`; the root's scan
+      `hooks tests`. (The earlier "resolve via ruff/mypy config per half" plan is superseded.)
 
 ## 7. Makefile recipe backlog (command-by-command pass)
 
@@ -126,9 +134,13 @@ better implementation — critique each.** Grouped in build order:
 - [ ] **Multi-repo editable (Lesson 4).** Add `editable-local`/`sync-local` overlay convention
       + document `[tool.uv.sources]`/workspaces for sibling repos (py-foundationTools, py-cvTools,
       py-MathTools, py-robotTools, py-machineVisionTools, …).
-- [ ] **Quality (G5).** `uv-lint`/`uv-lintFix`/`uv-format` (ruff), `uv-typecheck` (mypy --strict),
-      `uv-typecheck-ty` (decide ty in/out), `uv-fullCheck`. Add `[tool.ruff]`/`[tool.mypy]` config;
-      correct paths per half (see §6); delete `.pylintrc`.
+- [x] **Quality (G5) DONE (2026-06-26, plan 11).** `uv-lint` (read-only `ruff check`), `uv-format`
+      (`ruff format` **then** `ruff check --fix --unsafe-fixes` — `--unsafe-fixes` is **intentional /
+      `# KEEP`**, do not strip), `uv-typecheck` (`mypy`), `uv-fullCheck` (composes
+      lint+typecheck+test; prior duplicate recipe line removed). No separate `uv-lintFix` (fixing is
+      via `uv-format`). **ty decided OUT (D1)** — `uv-typecheck-ty` removed from `.PHONY` (no recipe);
+      a comment marks it deferred. Paths scoped per half via `PY_*`/`.env` (see §6).
+      `[tool.ruff]`/`[tool.mypy]` config + `.pylintrc` deletion already landed (§3).
 - [~] **Test (G4).** `test`, `uv-test` (ensure synced env first — no fresh-env no-op), `uv-test-all`
       / `uv-test-matrix` (`.venvs/<ver>`), `testInEnv*`.
       DONE (2026-06-24, review adoption): `uv-test-all` migrated off the `.venv-pyXXX` naming to

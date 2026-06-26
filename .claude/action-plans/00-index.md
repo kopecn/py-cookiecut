@@ -12,39 +12,66 @@ resolves or supersedes a GAPS item, tick the box in `GAPS.md` and note it here.
 > touch both; each plan calls out which.
 
 > **Closed plans are removed; their durable verdicts live in
-> [`../specs/project-conventions.md`](../specs/project-conventions.md).** Plans 03/04/06/13 are
-> done and deleted (2026-06-25); 02 and 09 had their *decisions* settled (recorded in that spec)
-> but keep open files because implementation work remains.
+> [`../specs/project-conventions.md`](../specs/project-conventions.md).** Plans
+> 02/03/04/05/06/07/08/11/13/14 are done and deleted. **Only 09, 10, and the tail of 12 remain**,
+> all gated on the single open **dependency-SoT decision** in plan 09 (see below). 09's *uv.lock*
+> sub-decision is already settled (spec §6); what's open is the `requirements.txt` compile-as-lock
+> question that conflicts with `devops-makefile-principles.md` Lesson 1.
 
 | # | Plan | GAPS § | Blocking decisions? |
 |---|------|--------|---------------------|
 | 01 | [Cleanup stale on-disk artifacts](./01-cleanup-stale-artifacts.md) ✅ | §1 | No |
-| 02 | [Naming convention + hook validation](./02-naming-convention-and-hooks.md) | §2 | ✅ decided (keep camelCase) — hook impl open |
+| 02 | ✅ **CLOSED** → spec §1 (PEP-8 snake_case generated names; camelCase tooling keys; hook enforces) | §2 | — |
 | 03 | ✅ **CLOSED** → spec §4 (ruff+mypy config landed) | §3, §6 | — |
 | 04 | ✅ **CLOSED** → spec §2 (3.13 default / 3.10 floor) | §3, §7, §8 | — |
-| 05 | [bump2version HISTORY auto-roll](./05-bumpversion-history-followup.md) | §3 | No |
+| 05 | ✅ **CLOSED** → spec §8 (bump-% auto-rolls HISTORY into the bump commit) | §3 | — |
 | 06 | ✅ **CLOSED** → spec §3 (dev/prod model) | §4 | — |
-| 07 | [Generated pyproject defaults](./07-generated-pyproject-defaults.md) | §4 | Minor |
-| 08 | [Generated smoke test](./08-generated-smoke-test.md) | §4 | No |
+| 07 | ✅ **CLOSED** → spec §7 (publishable-shaped pyproject defaults) | §4 | — |
+| 08 | ✅ **CLOSED** → spec §7 (non-vacuous smoke test + bake assertions) | §4 | — |
 | 09 | [Makefile: dependency SoT, clean, flush, refresh](./09-makefile-deps-clean-flush.md) | §5, §7 | ✅ uv.lock decided (spec §6) — Makefile impl open |
 | 10 | [Makefile: multi-repo editable siblings](./10-makefile-multi-repo-editable.md) | §7 | Minor |
-| 11 | [Makefile: quality targets](./11-makefile-quality-targets.md) | §3, §6, §7 | No (after 03) |
-| 12 | [Makefile: test targets](./12-makefile-test-targets.md) | §7 | No |
+| 11 | ✅ **CLOSED** → spec §4 (lint/lintFix/format split; ty OUT; PY_SRC via .env) | §3, §6, §7 | — |
+| 12 | [Makefile: test targets](./12-makefile-test-targets.md) | §7 | Only the `uv-test` ensure-synced bit (→ plan 09) |
 | 13 | ✅ **CLOSED** → spec §5 (publish.yml scaffolded) | §5, §7 | — |
-| 14 | [Makefile: version/git orphan cleanup](./14-makefile-version-git-cleanup.md) | §7 | No (after 04) |
+| 14 | ✅ **CLOSED** → spec §4 note (VERSION var gone, checkCleanGit wired, tomllib→grep floor, template ported) | §7 | — |
 
 ## Suggested execution order
 
-1. **Decide the cross-cutting things first** (they unblock the rest):
-   - 02 camelCase verdict, 04 canonical Python set, 06 branch model, 09 lock/commit policy.
-2. **Mechanical cleanup**: 01, 03, 05.
-3. **Template body correctness**: 07, 08.
-4. **Makefile command-by-command pass** (build order): 09 → 10 → 11 → 12 → 13 → 14.
+1. ~~Cross-cutting decisions~~ — **done** (02, 04, 06, 09 lock policy, 13 all settled → spec).
+2. ~~Mechanical cleanup~~ (01, 03) and ~~template body correctness~~ (07, 08) — **done**.
+3. **Remaining work** — the **dependency-SoT tier only**: plan **09** (→ then 10, → then the
+   `uv-test` ensure-synced tail of 12). Everything else is closed.
 
-Plans 03, 11, and the ruff/mypy config are intertwined: 03 lands the *config*; 11 wires the
-*Makefile targets* that consume it. Do 03 before 11.
+Plan 09's open *implementation* fork (compile-as-lock `requirements.txt` y/n) touches
+`devops-makefile-principles.md` Lesson 1 — **needs an explicit decision before its Makefile work
+lands**, and it gates plan 10 and the last bit of plan 12. The uv.lock half is already settled
+(spec §6).
 
 ## Progress notes
+
+- **Makefile-tier cluster closed (05, 11, 14; most of 12) → spec — 2026-06-26.** `bump-{patch,
+  minor,major}` collapsed to a static pattern rule that auto-rolls `HISTORY.md` into the bump
+  commit (spec §8). Quality targets split cleanly: `uv-lint` (read-only), `uv-lintFix` (safe
+  `--fix`, **`--unsafe-fixes` removed**), `uv-format` (format only); duplicate `uv-fullCheck`
+  removed; **ty decided OUT (D1)** and dropped from `.PHONY` (spec §4). Per-half path scoping moved
+  off forked Makefiles onto **`.env`** (`template .env: PY_SRC=src`) — the two Makefiles are
+  **byte-identical again** (verified `diff` empty; baked project lints `src tests`, root lints
+  `hooks tests`). Plan 14 confirmed fully ported to the template half (VERSION var gone,
+  `checkCleanGit` wired, tomllib→grep floor fallback). All 10 bake tests green. Plans 05/11/14
+  deleted; 12 left open for only the `uv-test` ensure-synced item, which is really a plan-09
+  dependency.
+
+- **Naming cluster closed (02, 07, 08) → spec — 2026-06-26.** The naming verdict was **reversed**:
+  generated identifiers (`projectIdentifier`/`packageName`/`moduleName` *values*) are now **PEP-8
+  snake_case**, while camelCase is retained only for tooling *keys* and `test*`/Makefile names
+  (spec §1). `hooks/pre_gen_project.py` rewritten to validate all three identifiers against
+  `^[a-z_][a-z0-9_]*$` and abort the bake per-variable. `cookiecutter.json` `__prompts__` + a root
+  README variable table give discoverability. **07/08:** generated `pyproject.toml` is now
+  publishable-shaped (keywords/classifiers tracking the §2 matrix; deps empty-with-comment) and the
+  baked project ships a non-vacuous smoke test (`__version__` + `hello()` sentinel, `pythonpath =
+  ["src"]` so it tests without install). Root bake suite grew to **10 tests, all green** —
+  `testGeneratedModuleIsImportable` + three `testBakeRejects*` lock in the hook. Plan files 02/07/08
+  deleted; learnings in spec §1 and §7.
 
 - **Cross-cutting decisions resolved & applied — 2026-06-25.** User settled the five gating
   decisions; all applied to code and the verdicts migrated to

@@ -6,7 +6,7 @@
 	bump-patch bump-minor bump-major \
 	check-uv install-uv list-uv \
 	uv-bootstrap-pythons uv-bootstrap uv-sync uv-sync-headless uv-editable uv-refresh \
-	uv-lint uv-lintFix uv-format uv-typecheck uv-typecheck-ty uv-fullCheck \
+	uv-lint uv-format uv-typecheck uv-fullCheck \
 	uv-test uv-test-all uv-test-matrix \
 	uv-clean uv-flush-cache uv-flush-envs uv-flush-pythons uv-flush-everything uv-nuke \
 	uv-lifecycle-test \
@@ -72,6 +72,19 @@ define print_packages
 	@echo
 endef
 
+# Roll HISTORY.md on a version bump: open a fresh dated section under
+# [Unreleased] (folding the accumulated notes into the just-bumped version) and
+# amend it into bump2version's commit so version + changelog move together.
+# Keep-a-Changelog convention: the `## [Unreleased]` header is the anchor.
+define roll_changelog
+	@ver=$$($(MAKE) -s version); day=$$(date +%F); \
+	awk -v v="$$ver" -v d="$$day" '\
+		{ print } \
+		/^## \[Unreleased\]/ && !seen { print ""; print "## [" v "] - " d; seen=1 }' \
+		HISTORY.md > HISTORY.md.tmp && mv HISTORY.md.tmp HISTORY.md; \
+	git add HISTORY.md && git commit --amend --no-edit
+endef
+
 # ============================================================================
 # MARK: - HELP
 # ============================================================================
@@ -97,17 +110,11 @@ checkCleanGit:  ## Guard: fail if the git working tree is dirty
 	@[ -z "$$(git status --porcelain)" ] || \
 		(echo "Working tree is dirty. Commit or stash changes first."; exit 1)
 
-bump-patch:  ## Increment patch version (0.0.x)
-	$(BUMPVERSION) patch
-
-bump-minor:  ## Increment minor version (0.x.0)
-	$(BUMPVERSION) minor
-
-bump-major:  ## Increment major version (x.0.0)
-	$(BUMPVERSION) major
-
-bump-%:  ## Usage: make bump-patch|bump-minor|bump-major
+# Static pattern rule: all three documented parts share one recipe (`$*` = the
+# part). Bump the version, then roll the changelog into the same commit.
+bump-patch bump-minor bump-major: bump-%:  ## Bump version (patch|minor|major) + roll HISTORY.md
 	$(BUMPVERSION) $*
+	$(call roll_changelog)
 
 open-github:  ## Open the GitHub repository in the default browser (macOS/Linux)
 	@remote=$$(git remote | head -1); \
@@ -232,18 +239,21 @@ uv-refresh: check-uv  ## Clean cache + upgrade all deps to latest
 # MARK: - UV · QUALITY
 # ============================================================================
 ##@ UV · Quality
-uv-lint: check-uv  ## Run ruff linter
+uv-lint: check-uv  ## Run ruff linter (read-only; non-zero exit for CI)
 	$(UV) ruff check $(PY_ALL)
 
 uv-format: check-uv  ## Format code with ruff
 	$(UV) ruff format $(PY_ALL)
+# KEEP --unsafe-fixes: intentional, added after findings on 2026-06-25.
+# Do NOT strip in cleanup/refactor passes — the unsafe autofixes here are relied
+# upon deliberately. Removing it has regressed this target before.
 	$(UV) ruff check --fix --unsafe-fixes $(PY_ALL)
 
 uv-typecheck: check-uv  ## Strict type check with mypy
 	$(UV) mypy $(PY_SRC) $(PY_TESTS) $(PY_EXAMPLES)
 
-uv-fullCheck: check-uv uv-lint uv-typecheck uv-test  ## lint + typecheck + tests
-
+# ty (Astral's preview type-checker) is intentionally OUT for now (decision D1):
+# it's pre-release and not wired into uv-fullCheck. Revisit when it stabilizes.
 uv-fullCheck: check-uv uv-lint uv-typecheck uv-test  ## lint + typecheck + tests
 
 # ============================================================================
@@ -296,7 +306,6 @@ uv-clean:  ## Remove build artifacts, caches, lock file
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 	find . -type f -name "*.pyc" -delete 2>/dev/null || true
 	rm -rf .mypy_cache/ .pytest_cache/ .ruff_cache/
-	rm -rf docs/sphinx/_build/
 	rm -f uv.lock
 
 uv-flush-envs:  ## Remove all virtual environments (.venv + .venvs/<ver>)

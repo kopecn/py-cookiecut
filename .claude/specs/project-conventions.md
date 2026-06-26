@@ -92,10 +92,30 @@ half's `pyproject.toml`:
 
 `target-version = "py310"` / `python_version = "3.10"` (the support floor, §2). Lint selection
 starts at `["E","F","I","UP","B"]`; **pep8-naming (`N`) is intentionally omitted** so the
-camelCase house style (§1) never fails CI. `ty` (preview type-checker) is deferred — `# TODO(G5)`.
+camelCase house style (§1) never fails CI.
 
-*Note:* landing this config surfaced real pre-existing lint debt in `hooks/`+`tests/` (unused
-imports, `assert False`, pointless comparisons). That cleanup is separate from the config.
+**Makefile quality targets (plan 11).**
+
+- `uv-lint` → `ruff check $(PY_ALL)` — read-only; non-zero exit for CI.
+- `uv-format` → `ruff format $(PY_ALL)` **then** `ruff check --fix --unsafe-fixes $(PY_ALL)`.
+  **`--unsafe-fixes` is intentional and load-bearing here** — it is relied upon after the
+  2026-06-25 findings and is marked `# KEEP` in the recipe. **Do not strip it** in cleanup/refactor
+  passes (removing it has regressed this target before). There is **no** separate `uv-lintFix`
+  target; fixing happens through `uv-format`.
+- `uv-typecheck` → `mypy …`; `uv-fullCheck` composes `uv-lint uv-typecheck uv-test`.
+
+**Decision D1 — `ty` is OUT.** Astral's preview type-checker is pre-release; `uv-typecheck-ty`
+was removed from `.PHONY` (it had no recipe) and is not part of `uv-fullCheck`. A comment marks it
+deferred; revisit when it stabilizes.
+
+**Per-half path scoping → `PY_*` vars in `.env`, not config.** The targets read `$(PY_SRC)` /
+`$(PY_ALL)`. The Makefile defaults to `PY_SRC ?= hooks` (root has no `src/`); the **template
+`.env` overrides `PY_SRC=src`**. So the two `.env` files differ but the Makefile stays
+byte-identical (see the two-halves note below). This supersedes the original "resolve via ruff/mypy
+config per half" idea.
+
+*Note:* landing the ruff/mypy config surfaced real pre-existing lint debt in `hooks/`+`tests/`
+(unused imports, `assert False`, pointless comparisons). That cleanup is separate from the config.
 
 ---
 
@@ -149,10 +169,38 @@ is committed. The *uv.lock* verdict above is settled regardless of that.
 
 ---
 
-## Note on the two halves (correction)
+## 8. Version bump & changelog roll (GAPS §3, plan 05)
 
-The Makefiles are **no longer byte-identical** across halves (an earlier aspiration). Per-half
-path scoping is done with explicit `PY_*` vars (`PY_SRC=hooks` root / `PY_SRC=src` template), and
-the release recipes differ (root defers to CI; the template still carries a `RELEASE_ENABLED`
-gate pending the plan-13/14 template-half port). The ruff/mypy `files`/`src` config (§4) still
-encodes per-half paths too; where both exist, the recipe's explicit `PY_*` paths win.
+**Verdict.** A version bump and its changelog entry move **together, in one commit**.
+
+- `bump-patch`/`bump-minor`/`bump-major` are a **static pattern rule** (`bump-patch bump-minor
+  bump-major: bump-%:`) sharing one recipe — `$*` is the part. The standalone generic `bump-%`
+  rule and the three duplicated bodies were collapsed into this.
+- The recipe runs `bumpversion <part>` (config `commit = true`, so it commits the `pyproject.toml`
+  version edit), then a `roll_changelog` define rewrites `HISTORY.md`: an `awk` step inserts a
+  fresh `## [<version>] - <YYYY-MM-DD>` section immediately under the `## [Unreleased]` anchor
+  (Keep-a-Changelog), folding the accumulated notes into the new version and leaving `[Unreleased]`
+  empty. It then `git add HISTORY.md && git commit --amend --no-edit` to fold the changelog into
+  bump2version's commit.
+- Mechanism **(B)** from the plan (recipe-owned, real `date +%F`) was chosen over a
+  `[bumpversion:file:HISTORY.md]` section (which can't inject a real date). `.bumpversion.cfg`
+  stays focused on the version string only.
+- Both halves; the Makefile is byte-identical so the recipe is the same. Verified via dry-run: the
+  `[Unreleased]` header empties and notes reappear under the dated section.
+
+---
+
+## Note on the two halves
+
+The Makefiles **are byte-identical** across halves again (verified: `diff Makefile
+{{cookiecutter.projectIdentifier}}/Makefile` is empty). Per-half differences live entirely in
+**`.env`**, the user-editable surface the Makefile `include`s:
+
+- Path scoping: the Makefile defaults `PY_SRC ?= hooks` (root has no `src/`); the **template
+  `.env` sets `PY_SRC=src`** (generated projects use a `src/` layout). The recipes read
+  `$(PY_SRC)`/`$(PY_ALL)`, so the same Makefile lints the right tree in each half.
+- The release recipes are identical too: both defer PyPI upload to CI (the old `RELEASE_ENABLED`
+  gate and grep `VERSION` var were removed from **both** halves; plan 13/14 template port is done).
+
+This is the cleaner realization of the original "config, not recipe args" aspiration — the
+divergence is one `.env` line, not a forked Makefile.

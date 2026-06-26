@@ -73,3 +73,8 @@ select = ["E", "F", "I", "UP", "B"]
 python_version = "3.10"
 strict = true
 files = ["hooks", "tests"]
+
+# cookiecutter and pytest_cookies ship no py.typed marker / stubs.
+[[tool.mypy.overrides]]
+module = ["cookiecutter.*", "pytest_cookies.*"]
+ignore_missing_imports = true

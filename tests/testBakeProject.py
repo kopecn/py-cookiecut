@@ -3,15 +3,16 @@ import os
 import shlex
 import subprocess
 import sys
+from collections.abc import Iterator
 from contextlib import contextmanager
+from typing import Any
 
-import pytest
 from cookiecutter.utils import rmtree
-from pytest_cookies.plugin import Cookies
+from pytest_cookies.plugin import Cookies, Result
 
 
 @contextmanager
-def insideDir(dirPath):
+def insideDir(dirPath: str) -> Iterator[None]:
     """
     Execute code from inside the given directory
     :param dirPath: String, path of the directory the command is being run.
@@ -25,7 +26,7 @@ def insideDir(dirPath):
 
 
 @contextmanager
-def bakeInTempDir(cookies: Cookies, *args, **kwargs):
+def bakeInTempDir(cookies: Cookies, *args: Any, **kwargs: Any) -> Iterator[Result]:
     """
     Delete the temporal directory that is created when executing the tests
     :param cookies: pytest_cookies.Cookies,
@@ -38,7 +39,7 @@ def bakeInTempDir(cookies: Cookies, *args, **kwargs):
         rmtree(str(result.project))
 
 
-def runInsideDir(command, dirPath):
+def runInsideDir(command: str, dirPath: str) -> int:
     """
     Run a command from inside a given directory, returning the exit status
     :param command: Command that will be executed
@@ -48,23 +49,23 @@ def runInsideDir(command, dirPath):
         return subprocess.check_call(shlex.split(command))
 
 
-def checkOutputInsideDir(command, dirPath):
+def checkOutputInsideDir(command: str, dirPath: str) -> bytes:
     "Run a command from inside a given directory, returning the command output"
     with insideDir(dirPath):
         return subprocess.check_output(shlex.split(command))
 
 
-def testYearComputeInLicenseFile(cookies: Cookies):
+def testYearComputeInLicenseFile(cookies: Cookies) -> None:
     with bakeInTempDir(cookies) as result:
         if result.project_path is None:
-            assert False  # Unable to grab path on created project
+            raise AssertionError("Unable to grab path on created project")
         licenseFilePath = result.project_path.joinpath("LICENSE")
         now = datetime.datetime.now()
-        with open(licenseFilePath, "r") as f:
+        with open(licenseFilePath) as f:
             assert str(now.year) in f.read()
 
 
-def projectInfo(result):
+def projectInfo(result: Result) -> tuple[str, str, str]:
     """Get toplevel dir, projectIdentifier, and project dir from baked cookies"""
     assert result.exception is None
     assert result.project.isdir()
@@ -75,7 +76,7 @@ def projectInfo(result):
     return projectPath, projectIdentifier, projectDir
 
 
-def testBakeWithDefaults(cookies: Cookies):
+def testBakeWithDefaults(cookies: Cookies) -> None:
     with bakeInTempDir(cookies) as result:
         assert result.project.isdir()
         assert result.exit_code == 0
@@ -85,14 +86,14 @@ def testBakeWithDefaults(cookies: Cookies):
         assert "tests" in foundToplevelFiles
 
 
-def testBakeAndRunTests(cookies: Cookies):
+def testBakeAndRunTests(cookies: Cookies) -> None:
     with bakeInTempDir(cookies) as result:
         assert result.project.isdir()
         # The generated smoke test must actually pass (non-vacuous): pytest exits 0.
         assert runInsideDir("pytest", str(result.project)) == 0
 
 
-def testGeneratedModuleIsImportable(cookies: Cookies):
+def testGeneratedModuleIsImportable(cookies: Cookies) -> None:
     """The baked package exposes __version__ and the sentinel function."""
     with bakeInTempDir(
         cookies,
@@ -110,21 +111,21 @@ def testGeneratedModuleIsImportable(cookies: Cookies):
         assert runInsideDir("pytest", str(result.project)) == 0
 
 
-def testBakeRejectsHyphenatedProjectIdentifier(cookies: Cookies):
+def testBakeRejectsHyphenatedProjectIdentifier(cookies: Cookies) -> None:
     """pre_gen hook aborts the bake on a non-snake_case projectIdentifier."""
     result = cookies.bake(extra_context={"projectIdentifier": "bad-name"})
     assert result.exit_code != 0
     assert result.exception is not None
 
 
-def testBakeRejectsUppercasePackageName(cookies: Cookies):
+def testBakeRejectsUppercasePackageName(cookies: Cookies) -> None:
     """pre_gen hook aborts the bake on an uppercase (non-PEP8) packageName."""
     result = cookies.bake(extra_context={"packageName": "MyPackage"})
     assert result.exit_code != 0
     assert result.exception is not None
 
 
-def testBakeRejectsHyphenatedModuleName(cookies: Cookies):
+def testBakeRejectsHyphenatedModuleName(cookies: Cookies) -> None:
     """pre_gen hook aborts the bake on a hyphenated moduleName."""
     result = cookies.bake(extra_context={"moduleName": "my-module"})
     assert result.exit_code != 0
@@ -132,21 +133,21 @@ def testBakeRejectsHyphenatedModuleName(cookies: Cookies):
 
 
 # @pytest.mark.skip(reason="A rare edge case, probably Cookiecutter's fault")
-def testBakeWithSpecialcharsAndRunTests(cookies: Cookies):
+def testBakeWithSpecialcharsAndRunTests(cookies: Cookies) -> None:
     """Ensure that a `full_name` with double quotes does not break pytest"""
     with bakeInTempDir(cookies, extra_context={"full_name": 'name "quote" name'}) as result:
         assert result.project.isdir()
-        runInsideDir("pytest", str(result.project)) == 0
+        assert runInsideDir("pytest", str(result.project)) == 0
 
 
-def testBakeWithApostropheAndRunTests(cookies: Cookies):
+def testBakeWithApostropheAndRunTests(cookies: Cookies) -> None:
     """Ensure that a `full_name` with apostrophes does not break setup.py"""
     with bakeInTempDir(cookies, extra_context={"full_name": "O'connor"}) as result:
         assert result.project.isdir()
-        runInsideDir("pytest", str(result.project)) == 0
+        assert runInsideDir("pytest", str(result.project)) == 0
 
 
-def testMakeHelp(cookies: Cookies):
+def testMakeHelp(cookies: Cookies) -> None:
     with bakeInTempDir(cookies) as result:
         # The supplied Makefile does not support win32
         if sys.platform != "win32":

@@ -72,6 +72,30 @@ Then:
    `tag-on-prod.yml`, which auto-creates a `v<version>` tag; the (scaffolded) `publish.yml`
    workflow then promotes that tagged build to PyPI once you wire its credentials.
 
+## Template variables
+
+You'll be prompted for these during the bake (each prompt carries inline help via the
+`__prompts__` block in `cookiecutter.json`). The **import surface** identifiers
+(`projectIdentifier`, `packageName`, `moduleName`) must be **PEP-8 snake_case** —
+`pre_gen_project.py` rejects hyphens, uppercase, and leading digits before rendering.
+
+| Variable | Convention | Becomes | Example |
+|---|---|---|---|
+| `fullName` | free text | `LICENSE` + pyproject authors | `Nicholas Bergantz` |
+| `email` | email | pyproject authors / PyPI contact | `you@example.com` |
+| `githubUsername` | lowercase | repo + issue URLs | `kopecn` |
+| `projectName` | Title Case OK | README/docs headings | `Python Boilerplate` |
+| `projectIdentifier` | **snake_case** | dist name + project folder (`pyproject [project].name`) | `python_boilerplate` |
+| `packageName` | **snake_case** | `src/<packageName>/` — what you `import` | `my_package` |
+| `moduleName` | **snake_case** | `src/<packageName>/<moduleName>.py` | `my_module` |
+| `projectShortDescription` | free text | pyproject `[project].description` | — |
+| `pypiUsername` | lowercase | PyPI contact (defaults to `githubUsername`) | `kopecn` |
+| `version` | PEP 440 | initial `[project].version` | `0.0.1` |
+| `ghIdentifier` | derived | `owner/repo` for GitHub URLs (accept default) | — |
+
+> Note: the cookiecutter variable **keys** are camelCase (`projectIdentifier`) — a
+> tooling-internal house style — but the **values** for the import surface are snake_case.
+
 ## Suggestions / Forking?
 
 - **Fork freely**: Customize the template to your needs.  This project was originally based on [Audrey's cookiecutter-pypackage](https://github.com/audreyfeldroy/cookiecutter-pypackage/).
