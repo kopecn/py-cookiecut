@@ -12,15 +12,29 @@ GAPS § it resolves and the source plan (now removed).
 
 ---
 
-## 1. Naming convention — camelCase is KEPT (GAPS §2, plan 02)
+## 1. Naming convention — two layers (GAPS §2, plan 02)
 
-**Verdict.** camelCase package/module names (`myPackage`, `myModule`), cookiecutter keys,
-test function names (`testBakeWithDefaults`), and Makefile targets are the **deliberate house
-convention** ("Nick's workflow"). This intentionally deviates from PEP 8 — match it, do not
-"fix" it. Tooling must accommodate it (see §4: ruff `N`/pep8-naming is omitted).
+**Verdict (revised 2026-06-25 — supersedes the earlier "keep camelCase everywhere").** Split
+the two layers that were previously conflated:
 
-*Still open (impl, not decision):* `hooks/pre_gen_project.py` validation message/regex
-alignment and validating `packageName`/`moduleName`, not just `projectIdentifier`.
+- **Generated identifiers → PEP-8 snake_case.** The *values* a user supplies for
+  `projectIdentifier`, `packageName`, `moduleName` — i.e. the distribution name, the import
+  package, and the module file — are **lowercase snake_case** (`python_boilerplate`,
+  `my_package`, `my_module`). This is what the import surface and PyPI consumers see, so it
+  follows PEP 8 / PEP 503. The `cookiecutter.json` defaults and `__prompts__` already teach
+  this; `pre_gen_project.py` enforces it (regex `^[a-z_][a-z0-9_]*$`).
+- **Tooling identifiers → camelCase (house style, kept).** The cookiecutter variable **keys**
+  themselves (`projectIdentifier`, `packageName`, `moduleName`), `test*` function names
+  (`testBakeWithDefaults`), and some Makefile targets stay camelCase ("Nick's workflow").
+  These are internal tooling names, never an import surface. Ruff `N`/pep8-naming stays omitted
+  (§4) so these don't fail CI.
+
+**Why:** camelCase as an importable package (`import myPackage`) surprises consumers and fights
+PyPI norms; the deliberate house style only ever made sense for tooling-internal names.
+
+**Discoverability:** per-prompt help lives in the `cookiecutter.json` `__prompts__` block
+(cookiecutter ≥2.2) so guidance shows during the interactive walkthrough; a quick-reference
+table of all variables lives in the root README.
 
 ---
 
@@ -109,3 +123,36 @@ the *pip* interface (`uv pip install`/`sync`/`compile`) never writes one — so 
 `uv-sync`/`installDev` rewrite, clean/flush/refresh — and the separate question of whether a
 generated `requirements.txt` lock (via `uv pip compile`, per devops-makefile-principles Lesson 1)
 is committed. The *uv.lock* verdict above is settled regardless of that.
+
+---
+
+## 7. Generated-project defaults & test surface (GAPS §4, plans 07, 08)
+
+**pyproject defaults.** A freshly baked `pyproject.toml` is publishable-shaped, not empty:
+
+- `keywords` seeded from context (`{{ packageName }}`, `python`, `package`).
+- `classifiers` include Development Status, Intended Audience, MIT license, OS-Independent, and
+  `Programming Language :: Python :: 3.10`–`3.13` — the version rows **track the §2 canonical
+  matrix** (keep in sync).
+- `dependencies` left **empty with a guiding comment** (a fresh library has no runtime deps;
+  declare ranges, not pins, when added). Dev deps live in the `[dev]` extra.
+
+**Test surface (non-vacuous smoke test).**
+
+- The package `__init__.py` exposes `__version__ = "{{ cookiecutter.version }}"`; the module
+  ships a `hello()` sentinel. The generated `test{{ moduleName }}.py` imports both and asserts.
+- `[tool.pytest.ini_options] pythonpath = ["src"]` lets `pytest` / `make test` import the
+  `src/`-layout package **without an install**, so a fresh checkout tests green immediately.
+- Root bake tests prove it: `testBakeAndRunTests` and `testGeneratedModuleIsImportable` run the
+  baked suite and assert exit 0; `testBakeRejects*` assert the snake_case hook (§1) aborts bad
+  bakes. (The earlier `runInsideDir(...) == 0` no-op assertion was fixed to a real `assert`.)
+
+---
+
+## Note on the two halves (correction)
+
+The Makefiles are **no longer byte-identical** across halves (an earlier aspiration). Per-half
+path scoping is done with explicit `PY_*` vars (`PY_SRC=hooks` root / `PY_SRC=src` template), and
+the release recipes differ (root defers to CI; the template still carries a `RELEASE_ENABLED`
+gate pending the plan-13/14 template-half port). The ruff/mypy `files`/`src` config (§4) still
+encodes per-half paths too; where both exist, the recipe's explicit `PY_*` paths win.

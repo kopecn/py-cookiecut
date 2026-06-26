@@ -3,13 +3,26 @@
   "email": "nicholas.bergantz@gmail.com",
   "githubUsername": "kopecn",
   "projectName": "Python Boilerplate",
-  "projectIdentifier": "pythonBoilerplate",
-  "packageName": "myPackage",
-  "moduleName": "myModule",
+  "projectIdentifier": "python_boilerplate",
+  "packageName": "my_package",
+  "moduleName": "my_module",
   "projectShortDescription": "Python Boilerplate contains all the boilerplate you need to create a Python package.",
   "pypiUsername": "{{ cookiecutter.githubUsername }}",
   "version": "0.0.1",
   "ghIdentifier": "{{ cookiecutter.githubUsername }}/{{ cookiecutter.projectIdentifier }}",
+  "__prompts__": {
+    "fullName": "Your full name -- free text. Lands in LICENSE + pyproject authors. e.g. Nicholas Bergantz",
+    "email": "Your email -- pyproject authors / PyPI contact. e.g. you@example.com",
+    "githubUsername": "GitHub username or org (lowercase) -- builds repo + issue URLs. e.g. kopecn",
+    "projectName": "Human-readable title -- free text, Title Case OK. Used in README/docs headings. e.g. Python Boilerplate",
+    "projectIdentifier": "Distribution + top-folder name. PEP 8/503: lowercase snake_case, NO hyphens. Becomes pyproject [project].name (PyPI) + the project folder. e.g. python_boilerplate",
+    "packageName": "Import package. PEP 8: short, all-lowercase snake_case. Becomes src/<packageName>/ -- you `import <packageName>`. e.g. my_package",
+    "moduleName": "Module file. PEP 8: lowercase snake_case. Becomes src/<packageName>/<moduleName>.py. e.g. my_module",
+    "projectShortDescription": "One-line summary -- free text. Lands in pyproject [project].description.",
+    "pypiUsername": "PyPI username (lowercase) -- defaults to your GitHub username.",
+    "version": "Initial version, PEP 440 (MAJOR.MINOR.PATCH). Lands in pyproject [project].version. e.g. 0.0.1",
+    "ghIdentifier": "Derived 'owner/repo' for GitHub URLs -- accept the default."
+  },
   "_copy_without_render": [
     ".github/workflows/*"
   ]

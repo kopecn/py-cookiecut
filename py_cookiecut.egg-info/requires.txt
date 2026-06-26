@@ -1,0 +1,11 @@
+cookiecutter>=2.6.0
+pytest>=8.4.1
+pytest-cookies>=0.7.0
+
+[dev]
+pytest
+ruff
+build
+bump2version
+mypy
+twine

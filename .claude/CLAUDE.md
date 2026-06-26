@@ -25,15 +25,19 @@ There are two distinct halves; keep them mentally separate:
 | **Template tooling** | root `pyproject.toml`, `Makefile`, `tests/`, `hooks/`, `cookiecutter.json` | The machinery that *bakes* and *tests* the template. Runs in *this* repo. |
 | **The template body** | `{{cookiecutter.projectIdentifier}}/` | The files that get rendered into a *new* user project. Jinja-templated; does not run here. |
 
-`cookiecutter.json` is the variable contract between the two halves. Variable names use
-**camelCase** (`projectIdentifier`, `packageName`, `moduleName`) and derived values
-(`pypiUsername`, `ghIdentifier`) reference earlier keys via Jinja.
+`cookiecutter.json` is the variable contract between the two halves. The variable **keys** use
+**camelCase** (`projectIdentifier`, `packageName`, `moduleName`) — a tooling-internal house
+style — and derived values (`pypiUsername`, `ghIdentifier`) reference earlier keys via Jinja.
+The **values** users supply for the package/module/project identifiers are **PEP-8 snake_case**
+(`python_boilerplate`, `my_package`, `my_module`): that's the import surface and PyPI name. See
+`.claude/specs/project-conventions.md` §1. Per-prompt guidance lives in the `__prompts__` block.
 
 ### Generation lifecycle (how a bake actually works)
 
-1. `hooks/pre_gen_project.py` runs **before** rendering — validates `projectIdentifier` is a
-   legal Python module name (regex `^[_a-zA-Z][_a-zA-Z0-9]+$`; rejects `-`). Exits non-zero
-   to abort the bake.
+1. `hooks/pre_gen_project.py` runs **before** rendering — validates `projectIdentifier`,
+   `packageName`, and `moduleName` are PEP-8 snake_case (regex `^[a-z_][a-z0-9_]*$`; rejects
+   hyphens, uppercase, leading digits). Emits a per-variable error and exits non-zero to abort
+   the bake.
 2. Cookiecutter renders `{{cookiecutter.projectIdentifier}}/` with the resolved variables,
    including templated *paths* (`src/{{cookiecutter.packageName}}/{{cookiecutter.moduleName}}.py`).
 3. `hooks/post_gen_project.py` runs **after** rendering (currently only prints a success message).
@@ -82,9 +86,12 @@ discover `test*.py` files and `test*` functions (note the **non-standard** `test
 
 ## Conventions specific to this project
 
-- **camelCase identifiers everywhere** is intentional ("Nick's workflow"): cookiecutter keys,
-  generated package/module names, test function names (`testBakeWithDefaults`), and Makefile
-  targets (`bumpPatch`, `devInstall`). This deviates from PEP 8 on purpose — match it.
+- **Two naming layers** (see `.claude/specs/project-conventions.md` §1): *tooling* identifiers
+  are camelCase house style ("Nick's workflow") — cookiecutter variable **keys**, `test*`
+  function names (`testBakeWithDefaults`), Makefile targets. *Generated* identifiers (the
+  **values** for `projectIdentifier`/`packageName`/`moduleName` → distribution name, import
+  package, module file) are **PEP-8 snake_case** (`my_package`, `my_module`). Don't conflate
+  them: camelCase keys can carry snake_case values.
 - When editing files under `{{cookiecutter.projectIdentifier}}/`, remember the content is
   **Jinja**, not final Python. `{{ ... }}` and `{% ... %}` are template directives. A file
   that looks broken in isolation may be correct post-render.

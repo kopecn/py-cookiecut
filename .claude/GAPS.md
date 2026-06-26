@@ -17,13 +17,19 @@ Legend: `[ ]` open · `[~]` in progress · `[x]` done
 
 ## 2. Naming-convention enforcement (the big decision)
 
-- [x] Template forces **camelCase** package/module names (`myPackage`, `myModule`).
-      **DECIDED (2026-06-25): KEEP** as the deliberate house convention — see
-      `.claude/specs/project-conventions.md` §1. Tooling accommodates it (ruff `N` omitted).
-- [ ] `pre_gen_project.py` error message says "use `_` instead" but the regex
-      `^[_a-zA-Z][_a-zA-Z0-9]+$` only *rejects `-`* — it never enforces that `_` was used.
-      Align message with actual validation (and validate `packageName`/`moduleName` too, not
-      just `projectIdentifier`).
+- [x] **REVERSED (2026-06-25): two-layer split, not "camelCase everywhere".** The earlier
+      "KEEP camelCase" verdict was superseded by an explicit new decision. *Generated*
+      identifiers (the **values** for `projectIdentifier`/`packageName`/`moduleName` → dist
+      name, import package, module file) are now **PEP-8 snake_case** (`python_boilerplate`,
+      `my_package`, `my_module`); *tooling* identifiers (cookiecutter **keys**, `test*`
+      function names, Makefile targets) stay camelCase. See
+      `.claude/specs/project-conventions.md` §1. `cookiecutter.json` defaults + `__prompts__`
+      teach this; the root README has a quick-reference table. Ruff `N` stays omitted (§4) so
+      the camelCase tooling layer doesn't fail CI.
+- [x] `pre_gen_project.py` **rewritten (2026-06-25)**: validates `projectIdentifier`,
+      `packageName`, AND `moduleName` against `^[a-z_][a-z0-9_]*$` (hard-fails on hyphens,
+      uppercase, leading digits) with a per-variable error message. Stale "use `_` instead"
+      message and single-variable scope both resolved.
 
 ## 3. Tooling drift / contradictions
 
@@ -63,10 +69,15 @@ Legend: `[ ]` open · `[~]` in progress · `[x]` done
 - [x] **Branch naming — DECIDED (2026-06-25): `dev`/`prod`.** Applied across CI (already),
       `tag-on-prod.yml`, README release step, and generated changelog URL. No `master`/`main` in
       user-facing docs/automation. See `.claude/specs/project-conventions.md` §3.
-- [ ] Generated `pyproject.toml` ships empty `keywords`, `classifiers`, `dependencies`, and
-      `[project.urls]` blocks — fill with sensible defaults or template them.
-- [ ] Generated test (`test{{moduleName}}.py`) has commented-out imports and a `test_content()`
-      that asserts nothing. Provide a real smoke test.
+- [x] Generated `pyproject.toml` empty blocks — **FILLED (2026-06-25)**: templated `keywords`
+      (`packageName`, python, package); `classifiers` (Alpha, MIT, OS-Independent, Python 3.10–3.13
+      matching §8); `dependencies` kept empty-with-comment (library declares ranges). `[project.urls]`
+      was already populated.
+- [x] Generated smoke test — **REAL (2026-06-25)**: package `__init__` exposes `__version__`;
+      module ships a `hello()` sentinel; `test{{moduleName}}.py` imports both and asserts. Added
+      `pythonpath = ["src"]` so `pytest`/`make test` work on a fresh checkout without install. Root
+      bake tests (`testBakeAndRunTests`, `testGeneratedModuleIsImportable`) run the baked suite green;
+      fixed the prior no-op `== 0` assertion.
 
 ## 5. Makefile hygiene
 

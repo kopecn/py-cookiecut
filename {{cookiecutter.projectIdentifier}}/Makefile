@@ -35,9 +35,8 @@ VENV ?= .cleanroom-venv
 # `true` in .env to actually run `twine upload`. Anything else keeps it disabled.
 RELEASE_ENABLED ?= false
 
-# Quality-target paths. ROOT half has NO src/ — its Python lives in hooks/ + tests/
-# (see GAPS.md §6). The template half overrides these to src/. Overridable via .env.
-PY_SRC ?= hooks
+# Quality-target paths. The generated project uses a src/ layout. Overridable via .env.
+PY_SRC ?= src
 PY_TESTS ?= tests
 PY_EXAMPLES ?=
 PY_ALL ?= $(PY_SRC) $(PY_TESTS) $(PY_EXAMPLES)

@@ -88,16 +88,53 @@ def testBakeWithDefaults(cookies: Cookies):
 def testBakeAndRunTests(cookies: Cookies):
     with bakeInTempDir(cookies) as result:
         assert result.project.isdir()
-        runInsideDir("pytest", str(result.project)) == 0
-        print("testBakeAndRunTests path", str(result.project))
+        # The generated smoke test must actually pass (non-vacuous): pytest exits 0.
+        assert runInsideDir("pytest", str(result.project)) == 0
+
+
+def testGeneratedModuleIsImportable(cookies: Cookies):
+    """The baked package exposes __version__ and the sentinel function."""
+    with bakeInTempDir(
+        cookies,
+        extra_context={
+            "projectIdentifier": "sample_project",
+            "packageName": "sample_pkg",
+            "moduleName": "sample_mod",
+            "version": "1.2.3",
+        },
+    ) as result:
+        assert result.exit_code == 0
+        modulePath = result.project.join("src", "sample_pkg", "sample_mod.py")
+        assert modulePath.check()
+        # The smoke test embedded in the baked project runs green.
+        assert runInsideDir("pytest", str(result.project)) == 0
+
+
+def testBakeRejectsHyphenatedProjectIdentifier(cookies: Cookies):
+    """pre_gen hook aborts the bake on a non-snake_case projectIdentifier."""
+    result = cookies.bake(extra_context={"projectIdentifier": "bad-name"})
+    assert result.exit_code != 0
+    assert result.exception is not None
+
+
+def testBakeRejectsUppercasePackageName(cookies: Cookies):
+    """pre_gen hook aborts the bake on an uppercase (non-PEP8) packageName."""
+    result = cookies.bake(extra_context={"packageName": "MyPackage"})
+    assert result.exit_code != 0
+    assert result.exception is not None
+
+
+def testBakeRejectsHyphenatedModuleName(cookies: Cookies):
+    """pre_gen hook aborts the bake on a hyphenated moduleName."""
+    result = cookies.bake(extra_context={"moduleName": "my-module"})
+    assert result.exit_code != 0
+    assert result.exception is not None
 
 
 # @pytest.mark.skip(reason="A rare edge case, probably Cookiecutter's fault")
 def testBakeWithSpecialcharsAndRunTests(cookies: Cookies):
     """Ensure that a `full_name` with double quotes does not break pytest"""
-    with bakeInTempDir(
-        cookies, extra_context={"full_name": 'name "quote" name'}
-    ) as result:
+    with bakeInTempDir(cookies, extra_context={"full_name": 'name "quote" name'}) as result:
         assert result.project.isdir()
         runInsideDir("pytest", str(result.project)) == 0
 

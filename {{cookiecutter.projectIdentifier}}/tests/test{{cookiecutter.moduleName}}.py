@@ -1,11 +1,20 @@
-import pytest
+"""Smoke tests for {{ cookiecutter.packageName }}.
 
-# from {{ cookiecutter.projectIdentifier }} import {{ cookiecutter.moduleName }}
+These import the real package (resolved via `pythonpath = ["src"]` in pyproject, so they
+run without an install) and assert concrete behavior — a meaningful starting point, not a
+vacuous placeholder.
+"""
+
+from {{ cookiecutter.packageName }} import __version__
+from {{ cookiecutter.packageName }}.{{ cookiecutter.moduleName }} import hello
 
 
-def test_content():
-    """Sample pytest test function."""
+def testVersionIsExposed():
+    """The package exposes its version, matching the baked value."""
+    assert __version__ == "{{ cookiecutter.version }}"
 
 
-if __name__ == "__main__":
-    test_content()
+def testHelloReturnsGreeting():
+    """The sentinel function returns a non-empty greeting naming the package."""
+    greeting = hello()
+    assert "{{ cookiecutter.packageName }}" in greeting

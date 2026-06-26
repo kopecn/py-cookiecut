@@ -12,15 +12,25 @@ requires-python = ">=3.10"
 authors = [
   {name = "{{cookiecutter.fullName}}", email = "{{cookiecutter.email}}"}
 ]
-keywords = [
-  
-]
+keywords = ["{{ cookiecutter.packageName }}", "python", "package"]
 classifiers = [
-
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: Implementation :: CPython",
 ]
 license = {text = "MIT"}
+# Runtime dependencies — none by default. Add them here (pyproject is the source of
+# truth); keep version ranges, not pins (this is a library). e.g.:
+#   dependencies = ["requests>=2.31"]
 dependencies = [
-
 ]
 
 [project.optional-dependencies]
@@ -49,6 +59,9 @@ package-dir = {"" = "src"}
 testpaths = ["tests/*"]
 python_functions = ["test*"]
 python_files = ["test*.py"]
+# src/ layout: let pytest import the package without an install (so `make test` and a
+# bare `pytest` work on a fresh checkout).
+pythonpath = ["src"]
 
 # Config-only path resolution (GAPS §6): generated projects use a src/ layout, so the
 # per-half paths point at src/ + tests/. `ruff check .` / `mypy .` (no path args)
