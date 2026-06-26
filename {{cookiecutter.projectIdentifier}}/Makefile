@@ -8,7 +8,6 @@
 	uv-bootstrap-pythons uv-bootstrap uv-sync uv-sync-headless uv-editable uv-refresh \
 	uv-lint uv-lintFix uv-format uv-typecheck uv-typecheck-ty uv-fullCheck \
 	uv-test uv-test-all uv-test-matrix \
-	uv-validateBuild \
 	uv-clean uv-flush-cache uv-flush-envs uv-flush-pythons uv-flush-everything uv-nuke \
 	uv-lifecycle-test \
 	dev setup \
@@ -31,12 +30,9 @@ DEFAULT_PYTHON ?= 3.13
 PYTHON ?= python3
 VENV ?= .cleanroom-venv
 
-# Safety gate for `make release` (real PyPI upload). Off by default — flip to
-# `true` in .env to actually run `twine upload`. Anything else keeps it disabled.
-RELEASE_ENABLED ?= false
-
-# Quality-target paths. The generated project uses a src/ layout. Overridable via .env.
-PY_SRC ?= src
+# Quality-target paths. ROOT half has NO src/ — its Python lives in hooks/ + tests/
+# (see GAPS.md §6). The template half overrides these to src/. Overridable via .env.
+PY_SRC ?= hooks
 PY_TESTS ?= tests
 PY_EXAMPLES ?=
 PY_ALL ?= $(PY_SRC) $(PY_TESTS) $(PY_EXAMPLES)
@@ -55,7 +51,6 @@ HR := ========================================
 ifeq ($(filter $(DEFAULT_PYTHON),$(PYTHONS)),)
     $(error DEFAULT_PYTHON ($(DEFAULT_PYTHON)) is not in PYTHONS ($(PYTHONS)) — fix .env)
 endif
-VERSION = v$(shell grep -m 1 'version' pyproject.toml | tr -s ' ' | tr -d '"' | tr -d "'" | cut -d'=' -f2 | xargs)
 
 # ============================================================================
 # MARK: - Helpers · 
@@ -240,14 +235,14 @@ uv-refresh: check-uv  ## Clean cache + upgrade all deps to latest
 uv-lint: check-uv  ## Run ruff linter
 	$(UV) ruff check $(PY_ALL)
 
-uv-lintFix: check-uv  ## Run ruff linter with auto-fix
-	$(UV) ruff check --fix $(PY_ALL)
-
 uv-format: check-uv  ## Format code with ruff
 	$(UV) ruff format $(PY_ALL)
+	$(UV) ruff check --fix --unsafe-fixes $(PY_ALL)
 
 uv-typecheck: check-uv  ## Strict type check with mypy
 	$(UV) mypy $(PY_SRC) $(PY_TESTS) $(PY_EXAMPLES)
+
+uv-fullCheck: check-uv uv-lint uv-typecheck uv-test  ## lint + typecheck + tests
 
 uv-fullCheck: check-uv uv-lint uv-typecheck uv-test  ## lint + typecheck + tests
 
@@ -389,17 +384,25 @@ validateBuild: build  ## Validate build artifacts with twine
 	@echo "Validating dist/ with twine..."
 	$(PYTHON) -m twine check dist/*
 
-release-test: validateBuild  ## Upload to TestPyPI
-	@echo "Uploading to TestPyPI..."
+release-test: checkCleanGit validateBuild  ## Dry-run publish to TestPyPI (clean tree only)
+	@echo "Uploading $(REPO) v$$($(MAKE) -s version) to TestPyPI..."
 	@$(PYTHON) -m twine upload --repository testpypi dist/*
 
-release: validateBuild  ## Upload to PyPI (gated by RELEASE_ENABLED in .env)
-ifeq ($(RELEASE_ENABLED),true)
-	@echo "Uploading to PyPI..."
-	@$(PYTHON) -m twine upload dist/*
-else
-	@echo "-- DISABLED -- set RELEASE_ENABLED=true in .env to upload to PyPI."
-endif
+# PyPI publishing is owned by CI, not this Makefile. Per the ci-cd spec, the
+# pipeline is the single authoritative path to production — no manual, out-of-band
+# uploads. `.github/workflows/tag-on-prod.yml` tags v<version> on push to `prod`;
+# a publish-on-tag workflow promotes that artifact. `make release` therefore
+# refuses to upload and prints the release procedure instead.
+release: validateBuild  ## Refuse local upload; print the CI-driven release procedure
+	@echo "Local PyPI upload is disabled — the pipeline is the authoritative publish path."
+	@echo ""
+	@echo "To release $(REPO) v$$($(MAKE) -s version):"
+	@echo "  1. Bump the version (make bump-patch|bump-minor|bump-major) and merge to prod."
+	@echo "  2. Push to prod → tag-on-prod.yml creates the v<version> tag."
+	@echo "  3. The publish-on-tag workflow uploads to PyPI."
+	@echo ""
+	@echo "For a local pre-flight, use: make release-test (TestPyPI)."
+	@exit 1
 
 # ============================================================================
 # MARK: - PIP · FLUSH / LIST
