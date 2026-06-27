@@ -9,12 +9,12 @@ from {{ cookiecutter.packageName }} import __version__
 from {{ cookiecutter.packageName }}.{{ cookiecutter.moduleName }} import hello
 
 
-def testVersionIsExposed():
+def testVersionIsExposed() -> None:
     """The package exposes its version, matching the baked value."""
     assert __version__ == "{{ cookiecutter.version }}"
 
 
-def testHelloReturnsGreeting():
+def testHelloReturnsGreeting() -> None:
     """The sentinel function returns a non-empty greeting naming the package."""
     greeting = hello()
     assert "{{ cookiecutter.packageName }}" in greeting

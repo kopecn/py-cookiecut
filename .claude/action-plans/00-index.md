@@ -11,41 +11,35 @@ resolves or supersedes a GAPS item, tick the box in `GAPS.md` and note it here.
 > files under `{{cookiecutter.projectIdentifier}}/` that render into a new project. Most plans
 > touch both; each plan calls out which.
 
-> **Closed plans are removed; their durable verdicts live in
-> [`../specs/project-conventions.md`](../specs/project-conventions.md).** Plans
-> 02/03/04/05/06/07/08/11/13/14 are done and deleted. **Only 09, 10, and the tail of 12 remain**,
-> all gated on the single open **dependency-SoT decision** in plan 09 (see below). 09's *uv.lock*
-> sub-decision is already settled (spec §6); what's open is the `requirements.txt` compile-as-lock
-> question that conflicts with `devops-makefile-principles.md` Lesson 1.
+> **🎉 All plans are now CLOSED and their files removed (2026-06-26).** Every durable verdict lives
+> in [`../specs/project-conventions.md`](../specs/project-conventions.md) (§1–§9) and the resolution
+> details are ticked in [`../GAPS.md`](../GAPS.md). This index is kept as the historical record of
+> what was decided and where it landed. New work should open a fresh plan or update GAPS directly.
 
-| # | Plan | GAPS § | Blocking decisions? |
-|---|------|--------|---------------------|
-| 01 | [Cleanup stale on-disk artifacts](./01-cleanup-stale-artifacts.md) ✅ | §1 | No |
-| 02 | ✅ **CLOSED** → spec §1 (PEP-8 snake_case generated names; camelCase tooling keys; hook enforces) | §2 | — |
-| 03 | ✅ **CLOSED** → spec §4 (ruff+mypy config landed) | §3, §6 | — |
-| 04 | ✅ **CLOSED** → spec §2 (3.13 default / 3.10 floor) | §3, §7, §8 | — |
-| 05 | ✅ **CLOSED** → spec §8 (bump-% auto-rolls HISTORY into the bump commit) | §3 | — |
-| 06 | ✅ **CLOSED** → spec §3 (dev/prod model) | §4 | — |
-| 07 | ✅ **CLOSED** → spec §7 (publishable-shaped pyproject defaults) | §4 | — |
-| 08 | ✅ **CLOSED** → spec §7 (non-vacuous smoke test + bake assertions) | §4 | — |
-| 09 | [Makefile: dependency SoT, clean, flush, refresh](./09-makefile-deps-clean-flush.md) | §5, §7 | ✅ uv.lock decided (spec §6) — Makefile impl open |
-| 10 | [Makefile: multi-repo editable siblings](./10-makefile-multi-repo-editable.md) | §7 | Minor |
-| 11 | ✅ **CLOSED** → spec §4 (lint/lintFix/format split; ty OUT; PY_SRC via .env) | §3, §6, §7 | — |
-| 12 | [Makefile: test targets](./12-makefile-test-targets.md) | §7 | Only the `uv-test` ensure-synced bit (→ plan 09) |
-| 13 | ✅ **CLOSED** → spec §5 (publish.yml scaffolded) | §5, §7 | — |
-| 14 | ✅ **CLOSED** → spec §4 note (VERSION var gone, checkCleanGit wired, tomllib→grep floor, template ported) | §7 | — |
+| # | Plan | Landed in | GAPS § |
+|---|------|-----------|--------|
+| 01 | Cleanup stale on-disk artifacts | GAPS §1 (build/, .DS_Store, egg-info untracked — incl. 2026-06-26 regression re-fix) | §1 |
+| 02 | Naming convention + hook validation | spec §1 (PEP-8 snake_case generated names; camelCase tooling keys; hook enforces) | §2 |
+| 03 | Lint/typecheck stack | spec §4 (ruff + mypy config) | §3, §6 |
+| 04 | Python version policy | spec §2 (3.13 default / 3.10 floor; tomllib→grep) | §3, §7, §8 |
+| 05 | bump2version HISTORY auto-roll | spec §8 (bump-% rolls HISTORY into the bump commit) | §3 |
+| 06 | Branch model | spec §3 (dev/prod) | §4 |
+| 07 | Generated pyproject defaults | spec §7 (publishable-shaped) | §4 |
+| 08 | Generated smoke test | spec §7 (non-vacuous + bake assertions) | §4 |
+| 09 | Dependency SoT, clean, flush, refresh | spec §6 (**ranges, no committed lock**; `lock`/sync/refresh rewritten) | §5, §7 |
+| 10 | Multi-repo editable siblings | spec §9 (`[tool.uv.sources]` + gitignored overlay) | §7 |
+| 11 | Makefile quality targets | spec §4 (lint/format split; `--unsafe-fixes` KEPT; ty OUT; PY_SRC via .env) | §3, §6, §7 |
+| 12 | Makefile test targets | GAPS §7 Test (uv-test ensures sync; matrix; clean-room) | §7 |
+| 13 | Release auth | spec §5 (publish.yml scaffolded; CI-owned) | §5, §7 |
+| 14 | Version/git orphan cleanup | spec §4 note (VERSION var gone; checkCleanGit wired; floor fallback) | §7 |
 
-## Suggested execution order
+## Outcome
 
-1. ~~Cross-cutting decisions~~ — **done** (02, 04, 06, 09 lock policy, 13 all settled → spec).
-2. ~~Mechanical cleanup~~ (01, 03) and ~~template body correctness~~ (07, 08) — **done**.
-3. **Remaining work** — the **dependency-SoT tier only**: plan **09** (→ then 10, → then the
-   `uv-test` ensure-synced tail of 12). Everything else is closed.
-
-Plan 09's open *implementation* fork (compile-as-lock `requirements.txt` y/n) touches
-`devops-makefile-principles.md` Lesson 1 — **needs an explicit decision before its Makefile work
-lands**, and it gates plan 10 and the last bit of plan 12. The uv.lock half is already settled
-(spec §6).
+All 14 plans resolved. The two halves' Makefiles are **byte-identical** again (per-half scope lives
+in `.env`: `PY_SRC=src` for the template). The full bake suite is **10 tests, all green**. The one
+cross-spec tension — plan 09 vs. `devops-makefile-principles.md` Lesson 1 (committed compiled lock) —
+was resolved by explicit user decision in favor of **ranges, no committed lock** for this
+library/template; spec §6 records that §6 wins for py-cookiecut.
 
 ## Progress notes
 

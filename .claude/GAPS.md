@@ -115,25 +115,37 @@ Scaffold is in place; these targets are still `# TODO` stubs. Bake in the lesson
 `.claude/specs/devops-makefile-principles.md` as each is implemented. **It may or may not be a
 better implementation — critique each.** Grouped in build order:
 
-- [ ] **Item 1 — dependency SoT (Lesson 1).** Add `lock` (`uv pip compile`); rewrite `uv-sync`
-      (→ `uv pip sync` + `-e . --no-deps`) and `installDev` (`-r requirements.txt` + `-e . --no-deps`,
-      drop `--break-system-packages`/`--force-reinstall`).
-      DECIDED (2026-06-25): **`uv.lock` is NOT committed** — stay on uv's `uv pip` interface (never
-      writes a lockfile) and gitignore `uv.lock` (both halves); library declares ranges. See
-      `.claude/specs/project-conventions.md` §6. STILL PENDING: compile-as-lock y/n (generated
-      `requirements.txt`); `uv pip sync` vs `uv pip install`.
-- [ ] **Clean (G6 base).** `cleanBuild` / `cleanArtifacts` / `cleanTest` — must NOT delete a
-      committed lockfile (Lesson 2).
-- [~] **Flush/nuke (G6, Lesson 2).** `uv-clean`, `uv-flush-cache`, `uv-flush-envs` (rm -rf
-      `.venv` + `.venvs/*`), `uv-flush-pythons`, `uv-flush-everything`, `uv-nuke`, pip `nuke`/`list`.
-      Venv-deletion is the primitive; no per-package uninstall for correctness.
-      DONE: pip `nuke` + `list` (2026-06-24) — `nuke` documented as the inferior pip fallback;
-      `list` covers system + `.venv` + `.venv-py*`. The `uv-flush-*` tier is still stubbed.
-- [ ] **Refresh (G7, Lesson 3).** `uv-refresh` via `uv pip sync` / `--reinstall-package`; pip
-      `refresh` as documented inferior fallback.
-- [ ] **Multi-repo editable (Lesson 4).** Add `editable-local`/`sync-local` overlay convention
-      + document `[tool.uv.sources]`/workspaces for sibling repos (py-foundationTools, py-cvTools,
-      py-MathTools, py-robotTools, py-machineVisionTools, …).
+- [x] **Item 1 — dependency SoT (Lesson 1) DONE (2026-06-26, plan 09).** Decision: **ranges, no
+      committed lock** (D1=no compile-as-lock, D2=install from pyproject not sync-against-lock,
+      D3=don't commit). pyproject is the **sole authored dep source** (version ranges). `uv-sync`/
+      `uv-sync-headless`/`uv-bootstrap`/`uv-refresh`/`uv-test-all` and pip `installDev`/`refresh`
+      now install from `-e ".[dev]"` — the `-r requirements.txt` double-resolve is gone.
+      `installDev` dropped `--break-system-packages`/`--force-reinstall` (use a venv). New `lock`
+      target (`uv pip compile pyproject.toml --extra dev -o requirements.txt`) is an OPTIONAL local
+      convenience; **`requirements.txt` is gitignored (both halves)** and the committed comment-only
+      starter was deleted. `uv.lock` already not committed (spec §6). See spec §6.
+- [x] **Clean (G6 base) DONE.** `clean-build` / `clean-artifacts` / `clean-test` exist and remove
+      only build/cache/test artifacts. Lesson 2 lockfile-protection invariant is **moot by design**:
+      there is no committed lockfile (Item 1) — `requirements.txt` is gitignored/regenerable and the
+      `clean*` recipes don't touch it. Lockfile removal stays exclusively in the flush/nuke tier.
+- [x] **Flush/nuke (G6, Lesson 2) DONE.** `uv-clean`, `uv-flush-cache`, `uv-flush-envs` (rm -rf
+      `.venv` + `.venvs/*` + `.venv-py*`), `uv-flush-pythons`, `uv-flush-everything`, `uv-nuke`, pip
+      `nuke`/`list` — all have real recipes (verified `make -n`). Venv-deletion is the primitive; the
+      graduated targets have explicit blast radius. pip `nuke` is documented as the inferior fallback.
+- [x] **Refresh (G7, Lesson 3) DONE (2026-06-26, plan 09).** Under the no-lock decision (Item 1),
+      `uv pip sync`-against-a-lock doesn't apply; "refresh" = upgrade within pyproject ranges.
+      `uv-refresh` → `uv cache clean` + `uv pip install --upgrade -e ".[dev]"`; pip `refresh` is the
+      inferior fallback (`$(PIP) install --upgrade -e ".[dev]"`). Targeted churn is still available
+      ad-hoc via `uv pip install --reinstall-package <name>`.
+- [x] **Multi-repo editable (Lesson 4) DONE (2026-06-26, plan 10).** D1: gitignored
+      `requirements-local.txt` overlay + `LOCAL_OVERLAY` env override. `editable-local` (installs
+      `-e ../sibling` lines from the overlay, **no-ops if absent**) and `sync-local` (`uv-sync` then
+      the overlay on top) added both halves. `[tool.uv.sources]` documented as the **recommended**
+      path (commented example in the template `pyproject.toml` + a "Co-developing with sibling
+      repositories" section in the template `CONTRIBUTING.md`). Overlay gitignored both halves; CI/
+      release never read it. (Also fixed the stale CONTRIBUTING setup steps: `mkvirtualenv`/`setup.py
+      develop` → `make dev`; `make lint`/`test-all` → `make uv-fullCheck`; Python "3.12 and 3.13" →
+      "3.10 through 3.13".)
 - [x] **Quality (G5) DONE (2026-06-26, plan 11).** `uv-lint` (read-only `ruff check`), `uv-format`
       (`ruff format` **then** `ruff check --fix --unsafe-fixes` — `--unsafe-fixes` is **intentional /
       `# KEEP`**, do not strip), `uv-typecheck` (`mypy`), `uv-fullCheck` (composes
@@ -141,15 +153,13 @@ better implementation — critique each.** Grouped in build order:
       via `uv-format`). **ty decided OUT (D1)** — `uv-typecheck-ty` removed from `.PHONY` (no recipe);
       a comment marks it deferred. Paths scoped per half via `PY_*`/`.env` (see §6).
       `[tool.ruff]`/`[tool.mypy]` config + `.pylintrc` deletion already landed (§3).
-- [~] **Test (G4).** `test`, `uv-test` (ensure synced env first — no fresh-env no-op), `uv-test-all`
-      / `uv-test-matrix` (`.venvs/<ver>`), `testInEnv*`.
-      DONE (2026-06-24, review adoption): `uv-test-all` migrated off the `.venv-pyXXX` naming to
-      `.venvs/<ver>` (now consistent with `list-uv` + `uv-flush-envs`), and the per-version env
-      uses ONE deterministic selection model — activate `.venvs/<ver>` then `uv pip install` +
-      `python -m pytest` in that interpreter (was a `VIRTUAL_ENV=… uv pip install` + `uv run
-      --no-project` hybrid). Applied to both halves. Pip `list` now scans `.venvs/*`.
-      STILL TODO: `uv-test` ensure-synced; `testInEnv*`; consider `uv run --python X` to avoid
-      per-version reinstall (matrix scaling).
+- [x] **Test (G4) DONE (2026-06-26, plan 12).** `test` (path-free `pytest`), `uv-test` (now
+      **depends on `uv-sync`** so a fresh checkout never tests an empty/stale `.venv` — the
+      acceptance "no false-green no-op" is met), `uv-test-all`/`uv-test-matrix` (`.venvs/<ver>`,
+      consistent with `list-uv`/`uv-flush-envs`; per-version env activates `.venvs/<ver>` then
+      `uv pip install -e ".[dev]"` + `python -m pytest`), `testInEnv*` (clean-room `$(VENV)`).
+      Applied to both halves. *Deferred (optional, not blocking):* `uv run --python X` to avoid
+      per-version reinstall at matrix scale.
   - [x] **Onboarding entrypoint (review adoption):** added `make dev` / `make setup` aliases
         (→ `uv-sync`) so first-time setup is one command. Both halves.
 - [~] **Build & release.** DONE (root, 2026-06-24): `build` (no `uv-build`); `validateBuild` (no

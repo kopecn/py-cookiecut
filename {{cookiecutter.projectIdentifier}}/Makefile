@@ -4,13 +4,13 @@
 .PHONY: help version checkCleanGit open-github \
 	clean clean-build clean-artifacts clean-test \
 	bump-patch bump-minor bump-major \
-	check-uv install-uv list-uv \
+	check-uv install-uv list-uv lock \
 	uv-bootstrap-pythons uv-bootstrap uv-sync uv-sync-headless uv-editable uv-refresh \
 	uv-lint uv-format uv-typecheck uv-fullCheck \
 	uv-test uv-test-all uv-test-matrix \
 	uv-clean uv-flush-cache uv-flush-envs uv-flush-pythons uv-flush-everything uv-nuke \
 	uv-lifecycle-test \
-	dev setup \
+	dev setup editable-local sync-local \
 	installDev e refresh \
 	test testInEnvCleanup testInEnvInstallFromSetup testInEnvRunPytest testInEnv \
 	build validateBuild release-test release \
@@ -36,6 +36,12 @@ PY_SRC ?= hooks
 PY_TESTS ?= tests
 PY_EXAMPLES ?=
 PY_ALL ?= $(PY_SRC) $(PY_TESTS) $(PY_EXAMPLES)
+
+# Local co-development overlay: a gitignored, per-machine requirements file holding
+# `-e ../sibling` editable lines for sibling repos checked out next to this one.
+# Consumed by `editable-local`/`sync-local`; CI/release never reads it. Override the
+# path via the environment if you keep it elsewhere.
+LOCAL_OVERLAY ?= requirements-local.txt
 
 # Derived
 # Tool runner for uv- quality/test recipes: execute in the uv-managed .venv so
@@ -207,21 +213,28 @@ list-uv: check-uv  ## List uv envs, installed Pythons, packages, and cache info
 uv-bootstrap-pythons: check-uv  ## Install all configured Python versions via uv
 	uv python install $(PYTHONS)
 
+# Dependency single-source-of-truth: pyproject.toml declares deps as version
+# RANGES (this is a library/template — no committed lockfile; see GAPS §5 / spec §6).
+# Install workflows resolve straight from pyproject via `-e ".[dev]"`; there is no
+# `-r requirements.txt` double-resolve. `make lock` is an OPTIONAL local convenience
+# that compiles a pinned snapshot — its output (requirements.txt) is gitignored and
+# never committed.
+lock: check-uv  ## Compile a pinned requirements.txt from pyproject (local-only; gitignored)
+	uv pip compile pyproject.toml --extra dev -o requirements.txt
+	@echo "Wrote requirements.txt (gitignored). pyproject.toml remains the source of truth."
+
 uv-bootstrap: check-uv uv-bootstrap-pythons  ## Full bootstrap: pythons + venv + deps
 	uv venv --python $(DEFAULT_PYTHON)
-	uv pip install -r requirements.txt
 	uv pip install -e ".[dev]"
 	@echo ""
 	@echo "Bootstrap complete. Run 'make uv-test-all' to validate."
 
-uv-sync: check-uv  ## Sync deps incl. dev (default uv dev workflow)
+uv-sync: check-uv  ## Sync deps incl. dev from pyproject (default uv dev workflow)
 	@[ -d ".venv" ] || uv venv --python $(DEFAULT_PYTHON)
-	uv pip install -r requirements.txt
 	uv pip install -e ".[dev]"
 
 uv-sync-headless: check-uv  ## Sync deps WITHOUT dev extras (deploy)
 	@[ -d ".venv" ] || uv venv --python $(DEFAULT_PYTHON)
-	uv pip install -r requirements.txt
 	uv pip install .
 
 dev: uv-sync  ## One-command dev setup entrypoint (alias → uv-sync)
@@ -230,10 +243,25 @@ setup: dev  ## One-command dev setup entrypoint (alias → uv-sync)
 uv-editable: check-uv  ## Install this package editable via uv (uv pip install -e .)
 	uv pip install -e .
 
-uv-refresh: check-uv  ## Clean cache + upgrade all deps to latest
+uv-refresh: check-uv  ## Clean cache + upgrade all deps to latest (within pyproject ranges)
 	uv cache clean
-	uv pip install --upgrade -r requirements.txt
 	uv pip install --upgrade -e ".[dev]"
+
+# Multi-repo co-development (Lesson 4). RECOMMENDED: declare sibling repos in
+# pyproject's [tool.uv.sources] (`{ path = "../repoB", editable = true }`) so one
+# resolver spans member repos and CI stays on pinned index versions. The targets
+# below are the documented FALLBACK: a gitignored $(LOCAL_OVERLAY) of `-e ../sibling`
+# lines, layered on top of the normal env. Both no-op cleanly in a solo checkout.
+editable-local: check-uv  ## Install sibling repos editable from $(LOCAL_OVERLAY) (no-op if absent)
+	@if [ -f "$(LOCAL_OVERLAY)" ]; then \
+		echo ">> Installing local editable siblings from $(LOCAL_OVERLAY)"; \
+		uv pip install -r "$(LOCAL_OVERLAY)"; \
+	else \
+		echo ">> No $(LOCAL_OVERLAY) present — skipping local overlay (solo repo)."; \
+	fi
+
+sync-local: uv-sync editable-local  ## uv-sync, then layer local editable siblings over it
+	@echo ">> sync-local complete (locked env + any local editable siblings)."
 
 # ============================================================================
 # MARK: - UV · QUALITY
@@ -260,7 +288,9 @@ uv-fullCheck: check-uv uv-lint uv-typecheck uv-test  ## lint + typecheck + tests
 # MARK: - UV · TEST
 # ============================================================================
 ##@ UV · Test
-uv-test: check-uv  ## Run tests on DEFAULT_PYTHON
+# Depends on uv-sync so a fresh checkout never tests an empty/stale .venv (no
+# false-green no-op): the [dev] extra is installed from pyproject before pytest runs.
+uv-test: check-uv uv-sync  ## Run tests on DEFAULT_PYTHON (ensures a synced env first)
 	$(UV) pytest
 
 uv-test-all: check-uv  ## Run tests across all configured Python versions (.venvs/<ver>)
@@ -273,7 +303,6 @@ uv-test-all: check-uv  ## Run tests across all configured Python versions (.venv
 		venv=".venvs/$$py"; \
 		[ -d "$$venv" ] || uv venv --python $$py "$$venv"; \
 		if ( . "$$venv/bin/activate" && \
-		     uv pip install -q -r requirements.txt && \
 		     uv pip install -q -e ".[dev]" && \
 		     python -m pytest ); then \
 			echo "PASS: Python $$py"; \
@@ -343,17 +372,17 @@ uv-lifecycle-test: uv-flush-everything uv-bootstrap uv-test-all  ## flush -> boo
 # MARK: - PIP · INSTALL
 # ============================================================================
 ##@ PIP · Install
-installDev: clean  ## Install dev dependencies with pip
-	-$(PIP) list --editable --format=freeze | cut -d= -f1 | xargs -r $(PIP) uninstall --break-system-packages -y 2>/dev/null || true
-	$(PIP) install --break-system-packages --force-reinstall -r requirements.txt
-	$(PIP) install --break-system-packages -e ".[dev]"
+# Ambient-pip fallback (prefer the uv- path). Installs from pyproject's [dev] extra
+# — the single dep source. No --break-system-packages / --force-reinstall: use a
+# venv (make uv-sync) rather than fighting an externally-managed interpreter.
+installDev: clean  ## Install dev dependencies with pip (from pyproject [dev])
+	$(PIP) install -e ".[dev]"
 
 e:  ## Install this package in editable mode (pip install -e .)
 	$(PIP) install -e .
 
-refresh:  ## Refresh all pip packages from requirements + editable dev
-	$(PIP) install -r requirements.txt
-	$(PIP) install --force-reinstall -e ".[dev]"
+refresh:  ## Refresh pip packages: upgrade editable dev install (within pyproject ranges)
+	$(PIP) install --upgrade -e ".[dev]"
 
 # ============================================================================
 # MARK: - PIP · TEST

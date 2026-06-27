@@ -63,9 +63,10 @@ python_files = ["test*.py"]
 # bare `pytest` work on a fresh checkout).
 pythonpath = ["src"]
 
-# Config-only path resolution (GAPS §6): generated projects use a src/ layout, so the
-# per-half paths point at src/ + tests/. `ruff check .` / `mypy .` (no path args)
-# resolve scope from this config — the Makefile is byte-identical across halves.
+# Path resolution: the Makefile scopes quality targets via PY_* vars (.env sets
+# PY_SRC=src for this src/ layout). The src/files config below is the fallback that
+# makes a bare `ruff check .` / `mypy .` (no path args) and IDE integrations resolve
+# the same scope. The Makefile is byte-identical across halves.
 [tool.ruff]
 target-version = "py310"  # support floor; default dev interpreter is 3.13
 line-length = 100
@@ -78,3 +79,14 @@ select = ["E", "F", "I", "UP", "B"]
 python_version = "3.10"
 strict = true
 files = ["src", "tests"]
+
+# Multi-repo co-development (RECOMMENDED over the requirements-local.txt overlay).
+# Point a dependency at a sibling working tree so one resolver spans both repos during
+# dev, while CI/release still resolve the pinned index version. Uncomment and adjust:
+#
+# [tool.uv.sources]
+# my-sibling-lib = { path = "../my-sibling-lib", editable = true }
+#
+# The dependency itself stays declared (with a version range) under [project]
+# dependencies — [tool.uv.sources] only overrides WHERE it resolves from locally.
+# See `make sync-local` / `make editable-local` for the gitignored-overlay fallback.

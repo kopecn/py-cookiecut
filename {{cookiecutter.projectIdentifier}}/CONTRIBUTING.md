@@ -52,11 +52,11 @@ Follow these steps to set up `{{ cookiecutter.projectIdentifier }}` locally:
     cd {{ cookiecutter.projectIdentifier }}
     ```
 
-3. **Set up a virtual environment** and install the project locally:
+3. **Set up the environment** and install the project with dev dependencies:
 
     ```sh
-    mkvirtualenv {{ cookiecutter.projectIdentifier }}
-    python setup.py develop
+    make dev          # uv: create .venv + install -e ".[dev]" from pyproject
+    # (or `make installDev` for the pip fallback)
     ```
 
 4. **Create a new branch**:
@@ -65,11 +65,11 @@ Follow these steps to set up `{{ cookiecutter.projectIdentifier }}` locally:
     git checkout -b your-feature-branch
     ```
 
-5. **Run linters and tests**:
+5. **Run linters, type checks, and tests**:
 
     ```sh
-    make lint
-    make test-all
+    make uv-fullCheck     # ruff + mypy + pytest
+    # or individually: make uv-lint · make uv-typecheck · make uv-test
     ```
 
 6. **Commit and push your changes**:
@@ -84,13 +84,43 @@ Follow these steps to set up `{{ cookiecutter.projectIdentifier }}` locally:
 
 ---
 
+## Co-developing with sibling repositories
+
+When you need to develop this project against a **local, unreleased** checkout of a sibling
+library (e.g. it lives at `../my-sibling-lib`), you have two options.
+
+**Recommended — `[tool.uv.sources]` (declarative).** Keep the dependency declared with a normal
+version range under `[project].dependencies`, then add a local source override in `pyproject.toml`:
+
+```toml
+[tool.uv.sources]
+my-sibling-lib = { path = "../my-sibling-lib", editable = true }
+```
+
+One resolver now spans both repos during development; CI and release resolve the **pinned index
+version** instead, because they don't apply your local override. (See the commented example block
+in `pyproject.toml`.)
+
+**Fallback — gitignored overlay.** Create a per-machine `requirements-local.txt` with editable
+lines, then layer it over the normal environment:
+
+```sh
+echo "-e ../my-sibling-lib" >> requirements-local.txt
+make sync-local        # = make uv-sync, then install the local editable siblings on top
+```
+
+`requirements-local.txt` is **gitignored** and never read by CI/release. `make sync-local` and
+`make editable-local` **no-op cleanly** when no overlay exists, so a solo checkout is unaffected.
+
+---
+
 ## PR Guidelines
 
 Before submitting a pull request, make sure:
 
 - [ ] Tests are included for new logic
 - [ ] Documentation is updated if needed
-- [ ] The project supports Python 3.12 and 3.13
+- [ ] The project supports Python 3.10 through 3.13
 - [ ] All tests pass (CI checks will run on PRs)
 
 ---

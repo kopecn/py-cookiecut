@@ -132,17 +132,30 @@ spec: single authoritative pipeline path, no out-of-band deploys).
 
 ---
 
-## 6. Lockfile policy — no `uv.lock` committed (GAPS §5, §7, plan 09 decision)
+## 6. Dependency policy — ranges, no committed lock (GAPS §5, §7, plan 09)
 
-**Verdict.** This is a library/template: declare version ranges (`requires-python`), do **not**
-commit a lockfile. `uv.lock` is only written by uv's *project* interface (`uv sync`/`uv lock`);
-the *pip* interface (`uv pip install`/`sync`/`compile`) never writes one — so stay on `uv pip`.
-`uv.lock` is gitignored (both halves) as belt-and-suspenders.
+**Verdict.** This is a library/template: **`pyproject.toml` is the single authored dependency
+source**, declaring version **ranges** (`requires-python`, `dependencies`, the `[dev]` extra). **No
+lockfile of any kind is committed** — neither `uv.lock` nor a compiled `requirements.txt`.
 
-*Still open (impl, not decision):* the broader plan-09 Makefile work — `lock` target,
-`uv-sync`/`installDev` rewrite, clean/flush/refresh — and the separate question of whether a
-generated `requirements.txt` lock (via `uv pip compile`, per devops-makefile-principles Lesson 1)
-is committed. The *uv.lock* verdict above is settled regardless of that.
+- `uv.lock` is only written by uv's *project* interface (`uv sync`/`uv lock`); the *pip* interface
+  (`uv pip …`) never writes one — so stay on `uv pip`. Gitignored both halves (belt-and-suspenders).
+- **`requirements.txt` is a generated, local-only artifact.** `make lock` (`uv pip compile
+  pyproject.toml --extra dev -o requirements.txt`) produces a pinned snapshot for anyone who wants
+  one, but it is **gitignored** and never committed. The old committed comment-only "starter"
+  `requirements.txt` was **deleted** from both halves (it was a redundant second source — the very
+  drift GAPS §3 consolidated away).
+- **Install workflows resolve straight from pyproject** via `-e ".[dev]"`: `uv-sync`,
+  `uv-sync-headless`, `uv-bootstrap`, `uv-refresh`, `uv-test-all`, and pip `installDev`/`refresh`.
+  No `-r requirements.txt` double-resolve. `installDev` no longer passes
+  `--break-system-packages`/`--force-reinstall` — use a venv (`make uv-sync`) instead of fighting an
+  externally-managed interpreter.
+
+This resolves plan-09 decisions **D1** (no compile-as-lock), **D2** (install from pyproject, not
+`uv pip sync` against a lock), **D3** (don't commit a lock). It deliberately **departs from
+`devops-makefile-principles.md` Lesson 1** (which prescribes a committed compiled lock): that lesson
+targets *applications* wanting reproducible installs; a *library/template* publishes ranges so
+downstream resolvers stay free. Where the two specs disagree, **this §6 wins for py-cookiecut**.
 
 ---
 
@@ -187,6 +200,24 @@ is committed. The *uv.lock* verdict above is settled regardless of that.
   stays focused on the version string only.
 - Both halves; the Makefile is byte-identical so the recipe is the same. Verified via dry-run: the
   `[Unreleased]` header empties and notes reappear under the dated section.
+
+---
+
+## 9. Multi-repo co-development (GAPS §7, plan 10)
+
+**Verdict.** Two ways to develop against a local, unreleased sibling repo; ship both, recommend the
+first.
+
+- **Recommended — `[tool.uv.sources]`.** Keep the dep declared with a version range under
+  `[project].dependencies`; add a local override `my-sibling = { path = "../my-sibling", editable =
+  true }`. One resolver spans both repos in dev; CI/release resolve the pinned index version because
+  they don't apply the override. The template `pyproject.toml` ships this as a commented example.
+- **Fallback — gitignored overlay.** A per-machine `requirements-local.txt` of `-e ../sibling`
+  lines (path overridable via `LOCAL_OVERLAY`). `make editable-local` installs it; `make sync-local`
+  = `uv-sync` then the overlay on top. **Both no-op cleanly** when the overlay is absent (a solo
+  checkout is unaffected). The overlay is **gitignored both halves** and never read by CI/release.
+
+The generated `CONTRIBUTING.md` documents both under "Co-developing with sibling repositories."
 
 ---
 
