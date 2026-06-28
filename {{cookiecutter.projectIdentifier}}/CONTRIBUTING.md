@@ -87,30 +87,17 @@ Follow these steps to set up `{{ cookiecutter.projectIdentifier }}` locally:
 ## Co-developing with sibling repositories
 
 When you need to develop this project against a **local, unreleased** checkout of a sibling
-library (e.g. it lives at `../my-sibling-lib`), you have two options.
-
-**Recommended — `[tool.uv.sources]` (declarative).** Keep the dependency declared with a normal
-version range under `[project].dependencies`, then add a local source override in `pyproject.toml`:
-
-```toml
-[tool.uv.sources]
-my-sibling-lib = { path = "../my-sibling-lib", editable = true }
-```
-
-One resolver now spans both repos during development; CI and release resolve the **pinned index
-version** instead, because they don't apply your local override. (See the commented example block
-in `pyproject.toml`.)
-
-**Fallback — gitignored overlay.** Create a per-machine `requirements-local.txt` with editable
-lines, then layer it over the normal environment:
+library (e.g. it lives at `../my-sibling-lib`), use a **`requirements-local.txt`** overlay. Local
+and git/path resolution never goes in `pyproject.toml` — the manifest stays dependency **names
+only** (putting path/git pointers there is a module-deployment hazard).
 
 ```sh
 echo "-e ../my-sibling-lib" >> requirements-local.txt
-make sync-local        # = make uv-sync, then install the local editable siblings on top
+make uv-sync-local     # creates the venv, installs -r requirements-local.txt, then -e ".[dev]"
 ```
 
-`requirements-local.txt` is **gitignored** and never read by CI/release. `make sync-local` and
-`make editable-local` **no-op cleanly** when no overlay exists, so a solo checkout is unaffected.
+`requirements-local.txt` is **gitignored** and never read by CI/release, so a solo checkout is
+unaffected (just don't create the file).
 
 ---
 

@@ -1,6 +1,6 @@
-cookiecutter>=2.6.0
-pytest>=8.4.1
-pytest-cookies>=0.7.0
+cookiecutter
+pytest
+pytest-cookies
 
 [dev]
 pytest

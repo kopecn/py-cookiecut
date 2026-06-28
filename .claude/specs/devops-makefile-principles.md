@@ -8,24 +8,35 @@ Per-command reasoning is appended as we finalize each target in the command-by-c
 
 ---
 
-## Lesson 1 — Single source of truth for dependencies (pip ⇄ uv convergence)
+## Lesson 1 — Module declares names; the requirements file pins (BKM)
 
-**Problem.** pip's native input is `requirements.txt`; uv prefers `pyproject.toml` + a lockfile.
-For both backends to produce identical environments, they must converge on one artifact.
+**Problem.** pip's native input is `requirements.txt`; uv can use `pyproject.toml` and/or a
+requirements file. For both backends to produce identical environments they must lean on the same
+artifact — and a library must not over-constrain its consumers.
 
-**Why it's hard.** Installing `-r requirements.txt` *and* `-e ".[dev]"` resolves dependencies
-from two places → drift and version conflicts. Hand-maintained requirements files drift from
-pyproject. Private indexes need a fully resolved, pinned set for reproducible builds.
+**Why it's hard.** Pinning versions inside a *library's* `pyproject.toml` propagates conflicts into
+every downstream application that depends on it. Putting git-based pointers in `pyproject.toml`
+breaks deployment. Resolving from two places at once drifts.
 
-**Verdict — the best way.** pyproject.toml is the **only authored source of truth**;
-`requirements.txt` is a **generated lockfile**: `uv pip compile pyproject.toml --extra dev -o
-requirements.txt`. Both pip and uv install from the generated file → true convergence, zero
-drift, reproducible. The self-install becomes `-e . --no-deps` (deps already locked). A `lock`
-target owns regeneration; the lockfile is committed.
+**Verdict — the one model that works in production** (every other arrangement tried over the years
+has largely failed):
 
-**Principle.** pyproject = authored truth. `requirements.txt` = generated lock (ship a
-minimal/empty starter in the template; `make lock` populates it). Both paths: `-r
-requirements.txt` then `-e . --no-deps`. No hand-edited requirements files.
+1. **Only the application layer pins versions.** A library/module/template never pins.
+2. **Module-level pinning causes dependency conflicts** → `pyproject.toml` declares dependency
+   **names only**, never versions.
+3. **The requirements file is the only place for git-based dependency pointers**; a git URL in
+   `pyproject.toml` is a module-deployment disaster.
+4. **The Makefile leans on the requirements file for BOTH pip and uv** — `-r requirements.txt` then
+   the editable self-install (`-e ".[dev]"` / `-e "."`).
+5. **`pyproject.toml` maintains only the module/dependency names.**
+
+`requirements.txt` is **hand-authored and committed** (NOT `uv pip compile`-generated); siblings
+`requirements-release.txt` (tag-pinned) and `requirements-local.txt` (gitignored, local editable
+overrides) follow the same shape. `uv` runs through its **pip interface** only — no `uv.lock`, no
+`lock`/compile target.
+
+**Principle.** pyproject = names. requirements file(s) = pins + git pointers + the thing every
+install path leans on. Pinning is an application-layer concern, not a library's.
 
 ---
 
@@ -84,22 +95,23 @@ between "local editable path" and "pinned index" per dependency.
 wins, partial overrides), are hand-maintained per machine (paths differ), and pip has no shared
 resolver across repos → version conflicts surface late.
 
-**Verdict — the best way.** **uv workspaces / `[tool.uv.sources]`**
-(`{ path = "../repoB", editable = true }`) are first-class: one resolver across member repos,
-declarative local sources, switchable by profile/env. A file-overlay convention is an acceptable
-fallback when uv sources aren't usable, but is inferior. A template should ship the HOOK (a
-documented overlay + an `editable-local`/`sync-local` target) AND recommend `[tool.uv.sources]`.
+**Verdict — the best way.** Per Lesson 1, local editable siblings go through a **requirements file**,
+not the manifest: a per-machine **`requirements-local.txt`** of `-e ../sibling` lines, installed by
+**`make uv-sync-local`** on top of the normal env. `[tool.uv.sources]` / path overrides in
+`pyproject.toml` are **rejected** — putting local/git resolution in the manifest is the
+module-deployment disaster Lesson 1 warns about. The overlay is gitignored and never read by
+CI/release.
 
-**Principle.** First-class support for "swap these deps to local editable siblings": a documented
-overlay convention + targets, with uv `[tool.uv.sources]`/workspaces as the recommended path.
-Editable targets accept sibling paths.
+**Principle.** "Swap these deps to local editable siblings" is a `requirements-local.txt` +
+`uv-sync-local` concern, never a manifest concern.
 
 ---
 
 ## Cross-cutting verdict
 
-Most environment pain comes from **not having a lock/compile step and not always using a
-deletable venv**. Adopt the lessons (graduated flush, OS-aware install, lock-as-truth); reject
-the workarounds that fight tooling (hand-maintained requirements, per-package uninstall,
-force-reinstall gymnastics, `--break-system-packages`). uv's `compile`/`sync`/`sources` collapse
-three of the four pain points when used properly.
+Adopt the lessons: **names-in-manifest / pins-in-requirements** (Lesson 1), graduated flush,
+OS-aware install, always work in a deletable venv. The requirements file is **authored** and is what
+every install path (pip and uv) leans on; pinning lives at the application layer, never in a
+library's `pyproject.toml`. Reject the workarounds that fight tooling (per-package uninstall for
+correctness, force-reinstall gymnastics, `--break-system-packages`, git URLs / version pins in the
+manifest).

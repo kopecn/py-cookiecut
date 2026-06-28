@@ -40,12 +40,11 @@ Pipfile.lock
 # ranges (requires-python) and stay on uv's `uv pip` interface, which never writes a
 # lockfile (only `uv sync`/`uv lock` do). Ignored as belt-and-suspenders.
 uv.lock
-# requirements.txt is a GENERATED, local-only artifact (`make lock` compiles it from
-# pyproject.toml). pyproject is the sole authored dep source (ranges) — never commit
-# the compiled pin-set.
-requirements.txt
-# requirements-local.txt is the per-machine co-development overlay (`-e ../sibling`
-# editable lines) consumed by `make editable-local`/`sync-local`. Never committed.
+# NOTE: requirements.txt and requirements-release.txt are COMMITTED, not ignored. Per the
+# dependency BKM pyproject.toml declares dependency NAMES ONLY; the requirements files carry
+# the pins + git-based pointers and every install path leans on them. No `lock`/compile step.
+# requirements-local.txt is the per-machine local editable sibling overlay (`-e ../sibling`
+# lines) consumed by `make uv-sync-local`. Never committed.
 requirements-local.txt
 *.egg-info/ # Generic wheel/package info folders
 

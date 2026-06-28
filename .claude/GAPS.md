@@ -115,37 +115,43 @@ Scaffold is in place; these targets are still `# TODO` stubs. Bake in the lesson
 `.claude/specs/devops-makefile-principles.md` as each is implemented. **It may or may not be a
 better implementation — critique each.** Grouped in build order:
 
-- [x] **Item 1 — dependency SoT (Lesson 1) DONE (2026-06-26, plan 09).** Decision: **ranges, no
-      committed lock** (D1=no compile-as-lock, D2=install from pyproject not sync-against-lock,
-      D3=don't commit). pyproject is the **sole authored dep source** (version ranges). `uv-sync`/
-      `uv-sync-headless`/`uv-bootstrap`/`uv-refresh`/`uv-test-all` and pip `installDev`/`refresh`
-      now install from `-e ".[dev]"` — the `-r requirements.txt` double-resolve is gone.
-      `installDev` dropped `--break-system-packages`/`--force-reinstall` (use a venv). New `lock`
-      target (`uv pip compile pyproject.toml --extra dev -o requirements.txt`) is an OPTIONAL local
-      convenience; **`requirements.txt` is gitignored (both halves)** and the committed comment-only
-      starter was deleted. `uv.lock` already not committed (spec §6). See spec §6.
-- [x] **Clean (G6 base) DONE.** `clean-build` / `clean-artifacts` / `clean-test` exist and remove
-      only build/cache/test artifacts. Lesson 2 lockfile-protection invariant is **moot by design**:
-      there is no committed lockfile (Item 1) — `requirements.txt` is gitignored/regenerable and the
-      `clean*` recipes don't touch it. Lockfile removal stays exclusively in the flush/nuke tier.
-- [x] **Flush/nuke (G6, Lesson 2) DONE.** `uv-clean`, `uv-flush-cache`, `uv-flush-envs` (rm -rf
-      `.venv` + `.venvs/*` + `.venv-py*`), `uv-flush-pythons`, `uv-flush-everything`, `uv-nuke`, pip
-      `nuke`/`list` — all have real recipes (verified `make -n`). Venv-deletion is the primitive; the
-      graduated targets have explicit blast radius. pip `nuke` is documented as the inferior fallback.
-- [x] **Refresh (G7, Lesson 3) DONE (2026-06-26, plan 09).** Under the no-lock decision (Item 1),
-      `uv pip sync`-against-a-lock doesn't apply; "refresh" = upgrade within pyproject ranges.
-      `uv-refresh` → `uv cache clean` + `uv pip install --upgrade -e ".[dev]"`; pip `refresh` is the
-      inferior fallback (`$(PIP) install --upgrade -e ".[dev]"`). Targeted churn is still available
-      ad-hoc via `uv pip install --reinstall-package <name>`.
-- [x] **Multi-repo editable (Lesson 4) DONE (2026-06-26, plan 10).** D1: gitignored
-      `requirements-local.txt` overlay + `LOCAL_OVERLAY` env override. `editable-local` (installs
-      `-e ../sibling` lines from the overlay, **no-ops if absent**) and `sync-local` (`uv-sync` then
-      the overlay on top) added both halves. `[tool.uv.sources]` documented as the **recommended**
-      path (commented example in the template `pyproject.toml` + a "Co-developing with sibling
-      repositories" section in the template `CONTRIBUTING.md`). Overlay gitignored both halves; CI/
-      release never read it. (Also fixed the stale CONTRIBUTING setup steps: `mkvirtualenv`/`setup.py
-      develop` → `make dev`; `make lint`/`test-all` → `make uv-fullCheck`; Python "3.12 and 3.13" →
-      "3.10 through 3.13".)
+- [x] **Item 1 — dependency model (BKM) DONE (2026-06-28).** The one production-tested model:
+      **`pyproject.toml` declares dependency NAMES ONLY** (no version pins, no git URLs); **only the
+      application layer pins**; module-level pins cause conflicts. **The requirements file is the only
+      place for git-based pointers**, and **every install path — pip AND uv — leans on it**:
+      `uv-sync`/`uv-sync-headless`/`uv-sync-dev`/`uv-sync-release`/`uv-sync-local`/`uv-bootstrap`/
+      `uv-refresh`/`uv-test-all` and pip `installDev`/`refresh` all run `-r requirements*.txt` then the
+      editable self-install (`-e ".[dev]"` / `-e "."`). `requirements.txt` is **hand-authored &
+      committed** (NOT `uv pip compile`-generated); `requirements-release.txt` (tag-pinned) is also
+      committed; `requirements-local.txt` (local editable overrides) is **gitignored**. `uv` runs
+      through its **pip interface** only — **no `uv.lock`** (gitignored), **no `lock`/compile target**.
+      `installDev` dropped `--break-system-packages`/`--force-reinstall` (use a venv). **Supersedes the
+      earlier "ranges, no committed lock" decision and `devops-makefile-principles.md` Lesson 1.** See
+      spec §6.
+- [x] **Clean (G6 base) DONE.** `clean-build` / `clean-artifacts` / `clean-test` remove only
+      build/cache/test artifacts. They never touch the authored `requirements*.txt` (those are source,
+      not generated). `clean-build` removes any stray `uv.lock` (never committed). No committed
+      lockfile exists to protect (Item 1).
+- [x] **Flush/nuke (G6, Lesson 2) DONE.** `uv-flush-cache`, `uv-flush-envs` (rm -rf
+      `.venv` + `.venvs/*` + `.venv-py*`), `uv-flush-pythons`, `uv-flush-everything` (= `clean` +
+      `uv-flush-envs` + `uv-flush-cache`), `uv-nuke`, pip `nuke`/`list` — all have real recipes
+      (verified `make -n`). The separate `uv-clean` was folded into the base `clean` tier (`uv.lock`
+      removal now lives in `clean-build`). Venv-deletion is the primitive; the graduated targets have
+      explicit blast radius. pip `nuke` is documented as the inferior fallback.
+- [x] **Refresh (G7, Lesson 3) DONE (2026-06-28).** "refresh" = reinstall from the requirements file
+      then upgrade the editable dev install. `uv-refresh` → `uv cache clean` + `uv pip install -r
+      requirements.txt` + `uv pip install --upgrade -e ".[dev]"`; pip `refresh` is the inferior fallback
+      (`$(PIP) install -r requirements.txt` + `--upgrade -e ".[dev]"`). Targeted churn is still
+      available ad-hoc via `uv pip install --reinstall-package <name>`.
+- [x] **Multi-repo editable (Lesson 4) DONE (2026-06-28).** Per the BKM, local editable siblings go
+      through a **requirements file**, never the manifest. **`requirements-local.txt`** holds the
+      `-e ../sibling` lines; **`make uv-sync-local`** installs it then the editable package. It is
+      **gitignored** (both halves); CI/release never read it. `[tool.uv.sources]` / path overrides in
+      `pyproject.toml` are **rejected** (manifest must stay names-only). The earlier
+      `editable-local`/`sync-local`/`LOCAL_OVERLAY` overlay machinery and the `[tool.uv.sources]`
+      commented example were **removed**. (Also fixed the stale CONTRIBUTING setup steps:
+      `mkvirtualenv`/`setup.py develop` → `make dev`; `make lint`/`test-all` → `make uv-fullCheck`;
+      Python "3.12 and 3.13" → "3.10 through 3.13".)
 - [x] **Quality (G5) DONE (2026-06-26, plan 11).** `uv-lint` (read-only `ruff check`), `uv-format`
       (`ruff format` **then** `ruff check --fix --unsafe-fixes` — `--unsafe-fixes` is **intentional /
       `# KEEP`**, do not strip), `uv-typecheck` (`mypy`), `uv-fullCheck` (composes

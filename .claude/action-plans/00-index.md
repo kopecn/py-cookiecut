@@ -26,8 +26,8 @@ resolves or supersedes a GAPS item, tick the box in `GAPS.md` and note it here.
 | 06 | Branch model | spec §3 (dev/prod) | §4 |
 | 07 | Generated pyproject defaults | spec §7 (publishable-shaped) | §4 |
 | 08 | Generated smoke test | spec §7 (non-vacuous + bake assertions) | §4 |
-| 09 | Dependency SoT, clean, flush, refresh | spec §6 (**ranges, no committed lock**; `lock`/sync/refresh rewritten) | §5, §7 |
-| 10 | Multi-repo editable siblings | spec §9 (`[tool.uv.sources]` + gitignored overlay) | §7 |
+| 09 | Dependency SoT, clean, flush, refresh | spec §6 (**BKM: pyproject names-only; requirements file pins; both pip+uv lean on it; no `uv.lock`/`lock`**) | §5, §7 |
+| 10 | Multi-repo editable siblings | spec §9 (`requirements-local.txt` + `make uv-sync-local`; no `[tool.uv.sources]`) | §7 |
 | 11 | Makefile quality targets | spec §4 (lint/format split; `--unsafe-fixes` KEPT; ty OUT; PY_SRC via .env) | §3, §6, §7 |
 | 12 | Makefile test targets | GAPS §7 Test (uv-test ensures sync; matrix; clean-room) | §7 |
 | 13 | Release auth | spec §5 (publish.yml scaffolded; CI-owned) | §5, §7 |
@@ -36,10 +36,11 @@ resolves or supersedes a GAPS item, tick the box in `GAPS.md` and note it here.
 ## Outcome
 
 All 14 plans resolved. The two halves' Makefiles are **byte-identical** again (per-half scope lives
-in `.env`: `PY_SRC=src` for the template). The full bake suite is **10 tests, all green**. The one
-cross-spec tension — plan 09 vs. `devops-makefile-principles.md` Lesson 1 (committed compiled lock) —
-was resolved by explicit user decision in favor of **ranges, no committed lock** for this
-library/template; spec §6 records that §6 wins for py-cookiecut.
+in `.env`: `PY_SRC=src` for the template). The dependency model is the **BKM** (spec §6): the module
+manifest declares **names only**, the **requirements file holds pins + git pointers** and is what
+every install path (pip and uv) leans on, **only the application layer pins**, and there is no
+`uv.lock`/`lock` target. This **supersedes** the earlier "ranges, no committed lock" decision and
+`devops-makefile-principles.md` Lesson 1 — spec §6 (BKM) wins.
 
 ## Progress notes
 

@@ -132,30 +132,38 @@ spec: single authoritative pipeline path, no out-of-band deploys).
 
 ---
 
-## 6. Dependency policy — ranges, no committed lock (GAPS §5, §7, plan 09)
+## 6. Dependency model — module declares names, requirements file pins (GAPS §5, §7)
 
-**Verdict.** This is a library/template: **`pyproject.toml` is the single authored dependency
-source**, declaring version **ranges** (`requires-python`, `dependencies`, the `[dev]` extra). **No
-lockfile of any kind is committed** — neither `uv.lock` nor a compiled `requirements.txt`.
+**BKM.** This is the one production-tested model; many other arrangements have been tried over the
+years and largely failed. It is non-negotiable for this repo and the generated projects:
 
-- `uv.lock` is only written by uv's *project* interface (`uv sync`/`uv lock`); the *pip* interface
-  (`uv pip …`) never writes one — so stay on `uv pip`. Gitignored both halves (belt-and-suspenders).
-- **`requirements.txt` is a generated, local-only artifact.** `make lock` (`uv pip compile
-  pyproject.toml --extra dev -o requirements.txt`) produces a pinned snapshot for anyone who wants
-  one, but it is **gitignored** and never committed. The old committed comment-only "starter"
-  `requirements.txt` was **deleted** from both halves (it was a redundant second source — the very
-  drift GAPS §3 consolidated away).
-- **Install workflows resolve straight from pyproject** via `-e ".[dev]"`: `uv-sync`,
-  `uv-sync-headless`, `uv-bootstrap`, `uv-refresh`, `uv-test-all`, and pip `installDev`/`refresh`.
-  No `-r requirements.txt` double-resolve. `installDev` no longer passes
-  `--break-system-packages`/`--force-reinstall` — use a venv (`make uv-sync`) instead of fighting an
-  externally-managed interpreter.
+1. **Only the application layer pins versions.** A library/module/template never pins.
+2. **Module-level pinning causes dependency conflicts** — so `pyproject.toml` declares dependency
+   **names only**, never versions.
+3. **The requirements file is the only place for git-based dependency pointers**
+   (`pkg @ git+https://…`, `-e git+…`). A git URL in `pyproject.toml` is a module-deployment
+   disaster.
+4. **The Makefile leans on the requirements file for BOTH pip and uv workflows** — every install
+   path runs `-r requirements.txt` (or a sibling requirements file), then the editable self-install
+   (`-e ".[dev]"` / `-e "."`).
+5. **`pyproject.toml` maintains only the module/dependency names** — no version pins, no git URLs.
 
-This resolves plan-09 decisions **D1** (no compile-as-lock), **D2** (install from pyproject, not
-`uv pip sync` against a lock), **D3** (don't commit a lock). It deliberately **departs from
-`devops-makefile-principles.md` Lesson 1** (which prescribes a committed compiled lock): that lesson
-targets *applications* wanting reproducible installs; a *library/template* publishes ranges so
-downstream resolvers stay free. Where the two specs disagree, **this §6 wins for py-cookiecut**.
+**Requirement files** (all hand-authored — never `uv pip compile`-generated; committed except the
+local overlay):
+
+- `requirements.txt` — base install/test pointers; git-based pointers live here.
+- `requirements-release.txt` — tag-pinned release set (`make uv-sync-release`).
+- `requirements-local.txt` — per-machine local editable sibling overrides (`make uv-sync-local`);
+  **gitignored**, never read by CI/release.
+
+**`uv` runs through the pip interface only** (`uv pip …`), which never writes a lockfile; uv's
+*project* interface (`uv sync`/`uv lock`) is not used. **No `uv.lock`** (gitignored both halves) and
+**no `lock`/compile target**. `installDev` does not pass `--break-system-packages`/`--force-reinstall`
+— use a venv.
+
+This **supersedes** `devops-makefile-principles.md` Lesson 1 **and** the global
+`makefile-devops-approach.md` Lesson 1: the pinned set is **authored**, not generated, and pinning is
+an application-layer concern. Where any of them disagree, **this BKM wins**.
 
 ---
 
@@ -168,7 +176,8 @@ downstream resolvers stay free. Where the two specs disagree, **this §6 wins fo
   `Programming Language :: Python :: 3.10`–`3.13` — the version rows **track the §2 canonical
   matrix** (keep in sync).
 - `dependencies` left **empty with a guiding comment** (a fresh library has no runtime deps;
-  declare ranges, not pins, when added). Dev deps live in the `[dev]` extra.
+  when added, declare **names only — never pins or git URLs** per §6; those go in
+  `requirements*.txt`). Dev deps live in the `[dev]` extra (names only).
 
 **Test surface (non-vacuous smoke test).**
 
@@ -203,21 +212,18 @@ downstream resolvers stay free. Where the two specs disagree, **this §6 wins fo
 
 ---
 
-## 9. Multi-repo co-development (GAPS §7, plan 10)
+## 9. Multi-repo co-development (GAPS §7)
 
-**Verdict.** Two ways to develop against a local, unreleased sibling repo; ship both, recommend the
-first.
+**Verdict.** Per §6, local editable sibling repos are handled through a **requirements file**, not
+through `pyproject.toml` (no `[tool.uv.sources]`, no path/git overrides in the manifest — those are a
+module-deployment disaster).
 
-- **Recommended — `[tool.uv.sources]`.** Keep the dep declared with a version range under
-  `[project].dependencies`; add a local override `my-sibling = { path = "../my-sibling", editable =
-  true }`. One resolver spans both repos in dev; CI/release resolve the pinned index version because
-  they don't apply the override. The template `pyproject.toml` ships this as a commented example.
-- **Fallback — gitignored overlay.** A per-machine `requirements-local.txt` of `-e ../sibling`
-  lines (path overridable via `LOCAL_OVERLAY`). `make editable-local` installs it; `make sync-local`
-  = `uv-sync` then the overlay on top. **Both no-op cleanly** when the overlay is absent (a solo
-  checkout is unaffected). The overlay is **gitignored both halves** and never read by CI/release.
+- A per-machine **`requirements-local.txt`** holds `-e ../sibling` editable lines. **`make
+  uv-sync-local`** creates the venv, installs `-r requirements-local.txt`, then the editable package
+  (`-e ".[dev]"`). The file is **gitignored** and never read by CI/release; a solo checkout simply
+  doesn't have one.
 
-The generated `CONTRIBUTING.md` documents both under "Co-developing with sibling repositories."
+The generated `CONTRIBUTING.md` documents this under "Co-developing with sibling repositories."
 
 ---
 

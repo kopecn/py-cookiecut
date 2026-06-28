@@ -21,9 +21,9 @@ Classifier: Topic :: Software Development
 Requires-Python: >=3.10
 Description-Content-Type: text/markdown
 License-File: LICENSE
-Requires-Dist: cookiecutter>=2.6.0
-Requires-Dist: pytest>=8.4.1
-Requires-Dist: pytest-cookies>=0.7.0
+Requires-Dist: cookiecutter
+Requires-Dist: pytest
+Requires-Dist: pytest-cookies
 Provides-Extra: dev
 Requires-Dist: pytest; extra == "dev"
 Requires-Dist: ruff; extra == "dev"

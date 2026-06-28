@@ -27,9 +27,11 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: CPython",
 ]
 license = {text = "MIT"}
-# Runtime dependencies — none by default. Add them here (pyproject is the source of
-# truth); keep version ranges, not pins (this is a library). e.g.:
-#   dependencies = ["requests>=2.31"]
+# Runtime dependencies — NAMES ONLY, never version-pinned (BKM: only the application
+# layer pins; module-level pins cause dependency conflicts). Put any version pins,
+# tag-pins, or git-based pointers in requirements*.txt — NEVER here (git URLs in
+# pyproject are a module-deployment disaster). e.g.:
+#   dependencies = ["requests"]
 dependencies = [
 ]
 
@@ -80,13 +82,7 @@ python_version = "3.10"
 strict = true
 files = ["src", "tests"]
 
-# Multi-repo co-development (RECOMMENDED over the requirements-local.txt overlay).
-# Point a dependency at a sibling working tree so one resolver spans both repos during
-# dev, while CI/release still resolve the pinned index version. Uncomment and adjust:
-#
-# [tool.uv.sources]
-# my-sibling-lib = { path = "../my-sibling-lib", editable = true }
-#
-# The dependency itself stays declared (with a version range) under [project]
-# dependencies — [tool.uv.sources] only overrides WHERE it resolves from locally.
-# See `make sync-local` / `make editable-local` for the gitignored-overlay fallback.
+# Multi-repo co-development: local editable sibling repos and any git-based pointers
+# go in requirements-local.txt (NEVER in pyproject — git URLs / path overrides here
+# are a module-deployment disaster). `make uv-sync-local` installs that overlay on top
+# of the normal env; it is gitignored and never read by CI/release.
