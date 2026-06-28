@@ -15,7 +15,7 @@ jobs:
       - uses: astral-sh/setup-uv@v5
 
       - name: Install default Python
-        run: uv python install 3.12
+        run: uv python install 3.13
 
       - name: Sync dev dependencies
         run: make uv-sync
@@ -27,17 +27,17 @@ jobs:
         run: make uv-typecheck
 
   test-python:
-    name: Python Tests (3.10 / 3.11 / 3.12)
+    name: Python Tests (3.10 / 3.11 / 3.12 / 3.13)
     runs-on: ubuntu-latest
     env:
-      PYTHONS: "3.10 3.11 3.12"
+      PYTHONS: "3.10 3.11 3.12 3.13"
     steps:
       - uses: actions/checkout@v4
 
       - uses: astral-sh/setup-uv@v5
 
       - name: Install Python versions
-        run: uv python install 3.10 3.11 3.12
+        run: uv python install 3.10 3.11 3.12 3.13
 
       - name: Run tests across all Python versions
-        run: make uv-test-all PYTHONS="3.10 3.11 3.12"
+        run: make uv-test-all PYTHONS="3.10 3.11 3.12 3.13"
