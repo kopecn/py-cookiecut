@@ -40,10 +40,12 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest",
+    "pytest-asyncio",
     "ruff",
     "build",
     "bump2version",
     "mypy",
+    "ty",
     "twine",
 ]
 
@@ -71,6 +73,7 @@ src = ["hooks", "tests"]
 # camelCase is a deliberate house convention ("Nick's workflow") — pep8-naming (N)
 # is intentionally omitted so it never fails CI.
 select = ["E", "F", "I", "UP", "B"]
+ignore = ["D301"]
 # TODO(G5): decide ty (preview type-checker) in/out — owned by Plan 11.
 
 [tool.mypy]
