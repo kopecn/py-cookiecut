@@ -57,10 +57,11 @@ testpaths = ["tests/*"]
 python_functions = ["test*"]
 python_files = ["test*.py"]
 
-# Config-only path resolution (GAPS §6): this repo's Python lives in hooks/ + tests/
-# (no src/). The Makefile is byte-identical across halves, so the per-half path
-# difference is expressed here, not in recipe args. `ruff check .` / `mypy .` (no
-# path args) resolve scope from this config.
+# Path resolution: the Makefile scopes quality targets via PY_* vars (.env), and this
+# root half has NO src/ — its Python lives in hooks/ + tests/ (PY_SRC defaults to
+# hooks). The src/files config below is the fallback that makes a bare `ruff check .` /
+# `mypy .` (no path args) and IDE integrations resolve the same scope. The Makefile is
+# byte-identical across halves.
 [tool.ruff]
 target-version = "py310"  # support floor; default dev interpreter is 3.13
 line-length = 100

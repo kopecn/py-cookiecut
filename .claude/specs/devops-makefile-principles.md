@@ -55,10 +55,12 @@ silently imports stale code. Editable installs are the worst offenders (dangling
 `rm -rf` the venv directory**, never per-package uninstall (fragile: system-managed pkgs, broken
 editables, ordering). If per-package uninstall is ever *needed*, that's a symptom that a
 non-deletable (system) env got polluted — the real fix is "always work in a deletable venv."
-Separate "remove generated artifacts" from "remove the committed lock."
+Separate "remove generated artifacts" (including the local, never-committed `uv.lock`) from
+"preserve the authored `requirements*.txt`."
 
 **Principle.** Graduated flush targets; venv deletion is the workhorse; never rely on
-per-package uninstall for correctness; routine `clean` must NOT delete a committed lockfile.
+per-package uninstall for correctness; routine `clean` may delete the local `uv.lock` (it is
+never committed — see Lesson 1) but must NOT delete the authored `requirements*.txt`.
 
 ---
 
@@ -73,7 +75,8 @@ deps (may miss new ones). Installing into an externally-managed Python (needing
 `--break-system-packages`) makes all of this worse.
 
 **Verdict — the best way.** Don't fight the tools. **`uv pip sync requirements.txt` makes the
-env EXACTLY match the lock** (adds missing, removes stragglers) — fast, no force-reinstall. For
+env EXACTLY match the authored `requirements.txt`** (adds missing, removes stragglers) — fast,
+no force-reinstall; there is no lockfile in this model (Lesson 1). For
 targeted local-version churn, `uv pip install --reinstall-package <name>` refreshes one package.
 A pip `--force-reinstall` path survives only as a documented, inferior fallback. Use a venv so
 `--break-system-packages` is never needed.
