@@ -20,22 +20,25 @@ items land. Legend: `[ ]` open · `[~]` in progress · `[x]` done.
 
 ---
 
-## B. `.gitignore` trailing inline comments break ignore patterns (both halves) — **OPEN**
+## B. `.gitignore` trailing inline comments break ignore patterns (both halves) — **DONE (2026-06-28)**
 
-- [ ] Git treats `#` as a comment **only at line start**; appended text becomes part of the
-      pattern. The consolidated `.gitignore` has many trailing-comment lines that now match
-      nothing: `*.egg-info/ # Generic wheel/package info folders`, `.cleanroom-venv/   # …`,
-      `.vscode/        # …`, `.idea/`, `*.iml`, `local_settings.py # …`, `*.spec`, `.Python`,
-      `MANIFEST`, `db.sqlite3`, `instance/`, `storage/*`, `*.log`. **Fix:** move every `#`
-      comment to its own line (pattern alone on the line). This is the root cause of finding C.
+- [x] Git treats `#` as a comment **only at line start**; appended text became part of the
+      pattern, so `*.egg-info/`, `.cleanroom-venv/`, `.vscode/`, `.idea/`, `*.iml`,
+      `local_settings.py`, `*.spec`, `.Python`, `MANIFEST`, `db.sqlite3`, `instance/`,
+      `storage/*`, `*.log` matched nothing. **Fix applied:** every comment moved to its own line
+      above the pattern, both halves. Verified each pattern now matches via `git check-ignore`
+      (the `.vscode/` case only resolved with `--no-index` because `.vscode/settings.json` is
+      separately tracked — see note). Root cause of finding C.
+      - Note: `.vscode/settings.json` is committed yet the (now-working) `.vscode/` rule ignores
+        it — a tracked-vs-ignored contradiction. Out of scope for B/C; decide separately whether
+        to `git rm --cached` it or keep shared workspace settings.
 
-## C. `py_cookiecut.egg-info/` build artifacts committed (root) — **OPEN**
+## C. `py_cookiecut.egg-info/` build artifacts committed (root) — **DONE (2026-06-28)**
 
-- [ ] `PKG-INFO`, `SOURCES.txt`, `requires.txt`, `top_level.txt`, `dependency_links.txt` are
-      tracked again, contradicting GAPS §1 (untracked twice). Re-entered because `*.egg-info/`
-      is dead (finding B). **Fix:** `git rm -r --cached py_cookiecut.egg-info/` and confirm the
-      repaired ignore rule holds. (`requirements_dev.txt` was even renamed *into*
-      `egg-info/requires.txt` — drop that too.)
+- [x] `PKG-INFO`, `SOURCES.txt`, `requires.txt`, `top_level.txt`, `dependency_links.txt` were
+      tracked again (contradicting GAPS §1), re-entered because `*.egg-info/` was dead (finding
+      B). **Fix applied:** `git rm -r --cached py_cookiecut.egg-info/`; confirmed none remain in
+      `git ls-files` and the repaired `*.egg-info/` rule now ignores the dir.
 
 ## D. `tag-on-prod.yml` "Skip if pyproject didn't change" fails the run (both halves) — **OPEN**
 
@@ -79,6 +82,6 @@ items land. Legend: `[ ]` open · `[~]` in progress · `[x]` done.
 
 ## Severity order
 
-A (fixed) and B/C are the blockers (B is the root cause of C). D is user-visible CI noise on
-`prod`. E breaks a documented target out of the box. F/G are latent BKM-consistency
-correctness issues (harmless only while deps are empty). H is a changelog-hygiene defect.
+A, B, C all fixed (B was the root cause of C). D is user-visible CI noise on `prod`. E breaks a
+documented target out of the box. F/G are latent BKM-consistency correctness issues (harmless
+only while deps are empty). H is a changelog-hygiene defect. **Remaining: D, E, F, G, H.**

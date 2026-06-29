@@ -16,6 +16,11 @@ Legend: `[ ]` open · `[~]` in progress · `[x]` done
       **Regressed and re-untracked 2026-06-26** (an editable install/build had re-staged the 5
       metadata files into the index); `git rm -r --cached` again — `.gitignore` `*.egg-info/` (line 43)
       now holds and the dir is ignored on disk.
+      **Regressed a third time and fixed at the ROOT CAUSE 2026-06-28 (plan 15 B/C):** the
+      `*.egg-info/` rule had a trailing inline comment (`*.egg-info/ # …`), which git folds into
+      the pattern so it matched nothing — that's why the dir kept re-tracking. All trailing-comment
+      patterns in both halves' `.gitignore` were moved to their own lines, then
+      `git rm -r --cached py_cookiecut.egg-info/`. Verified the repaired rule ignores the dir.
 - [x] `.DS_Store` on disk (gitignored). **Deleted (2026-06-25).**
 
 ## 2. Naming-convention enforcement (the big decision)

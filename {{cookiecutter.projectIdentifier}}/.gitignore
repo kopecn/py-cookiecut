@@ -28,7 +28,8 @@ var/
 
 # General virtual environments (Modern and Classic)
 .venv/
-.cleanroom-venv/   # Throwaway clean-room venv for `make testInEnv` (VENV in .env)
+# Throwaway clean-room venv for `make testInEnv` (VENV in .env)
+.cleanroom-venv/
 venv/
 env/
 .env/
@@ -46,7 +47,8 @@ uv.lock
 # requirements-local.txt is the per-machine local editable sibling overlay (`-e ../sibling`
 # lines) consumed by `make uv-sync-local`. Never committed.
 requirements-local.txt
-*.egg-info/ # Generic wheel/package info folders
+# Generic wheel/package info folders
+*.egg-info/
 
 # PDK / Environment Specific Cache Folders
 .tox/
@@ -85,12 +87,16 @@ dmypy.json
 .LSOverride
 
 # Standard VCS/Code Editor folders
-.idea/          # IntelliJ IDEA family
-*.iml           # Generic module file
-.vscode/        # VS Code workspace settings
+# IntelliJ IDEA family
+.idea/
+# Generic module file
+*.iml
+# VS Code workspace settings
+.vscode/
 
 # Python boilerplate / Framework config
-local_settings.py # Django specific local overrides
+# Django specific local overrides
+local_settings.py
 
 
 # ==============================
@@ -98,9 +104,12 @@ local_settings.py # Django specific local overrides
 # ==============================
 
 # General package distribution folders (PyInstaller/Build tools)
-*.spec         # PyInstaller spec files
-.Python        # Setuptools directory
-MANIFEST       # Man pages/manifests
+# PyInstaller spec files
+*.spec
+# Setuptools directory
+.Python
+# Man pages/manifests
+MANIFEST
 
 # CMake build system files
 CMakeFiles/
@@ -126,10 +135,14 @@ docs/_build/
 # ==============================
 
 # Databases and local state files
-db.sqlite3       # SQLite database file
-instance/        # Flask application instance folder
-storage/*        # General storage data folder (if applicable)
+# SQLite database file
+db.sqlite3
+# Flask application instance folder
+instance/
+# General storage data folder (if applicable)
+storage/*
 
 # Logs
-*.log            # Generic log files
+# Generic log files
+*.log
 pip-log.txt
