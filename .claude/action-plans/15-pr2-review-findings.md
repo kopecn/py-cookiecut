@@ -55,7 +55,7 @@ items land. Legend: `[ ]` open · `[~]` in progress · `[x]` done.
 
 ## F. uv quality/test targets use `uv run` (project interface), bypassing requirements + BKM — **OPEN**
 
-- [ ] `UV := uv run --extra dev` is uv's *project* interface: it resolves from `pyproject.toml`
+- [ ] `UV := uv run --no-project ` is uv's *project* interface: it resolves from `pyproject.toml`
       and auto-syncs the env (writing `uv.lock` — why `clean-build` does `rm -f uv.lock`),
       ignoring `requirements*.txt`. So `uv-lint`/`uv-typecheck`/`uv-test` run in an env that omits
       requirements-file deps; `uv-test` runs `uv-sync` (installs them via `uv pip`) then `uv run`
