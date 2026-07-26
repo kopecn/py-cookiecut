@@ -91,8 +91,9 @@ dmypy.json
 .idea/
 # Generic module file
 *.iml
-# VS Code workspace settings
-.vscode/
+# VS Code workspace settings — track only the shared extension recommendations
+.vscode/*
+!.vscode/extensions.json
 
 # Python boilerplate / Framework config
 # Django specific local overrides
