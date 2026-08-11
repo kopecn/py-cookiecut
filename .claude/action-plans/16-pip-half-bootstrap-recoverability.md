@@ -194,7 +194,8 @@ plant the backend first or it asserts nothing.
       isolation, which provisions its own setuptools from PyPI, so the ambient
       backend is never consulted. The original wording produced a false
       negative that blocked a clean room which then succeeded when run by hand.
-- [ ] C2 — wire as a prereq of `testInEnvInstallFromSetup` (Makefile:408) **only**.
+- [ ] C2 — wire as a prereq of `cleanRoomBootstrap` (renamed 2026-08-10 from
+      `testInEnvInstallFromSetup`; locate by name, not line) **only**.
       Leave `installDev`/`e`/`refresh`/`build` ungated per D1 — add an inline
       comment recording that this is deliberate.
 - [ ] C3 — `NETWORK REQUIRED` comment on the clean-room recipe citing E1
@@ -232,7 +233,7 @@ plant the backend first or it asserts nothing.
       correct the build/validateBuild "installer-agnostic" note per D5.
 
 ### H. Clean room must obey the dependency BKM — py-cookiecut, both halves
-- [x] H1 — `testInEnvInstallFromSetup`: install `-r requirements.txt` **before**
+- [x] H1 — `cleanRoomBootstrap`: install `-r requirements.txt` **before**
       `pip install ".[dev]"`. **DONE 2026-08-10** (both halves, `diff` empty).
       `pyproject.toml` is names-only by BKM, so `".[dev]"` alone makes pip
       resolve bare names against PyPI — fatal for any unpublished sibling
@@ -242,6 +243,18 @@ plant the backend first or it asserts nothing.
       NON-editable — validating the real packaging path is the target's purpose.
 - [ ] H2 — back-port H1 to py-foundationTools and py-MathTools. **DONE
       2026-08-10** for both, outside this plan's numbering.
+
+### I. Name the clean-room steps honestly — all repos
+- [x] I1 — the `testInEnv*` sub-steps promised testing and did not deliver it:
+      `testInEnvInstallFromSetup` only creates the venv and installs, and
+      `testInEnvCleanup` only deletes it. A user read the name, ran the target,
+      and correctly reported "I don't see any testing". Renamed 2026-08-10 to
+      say what they do — `cleanRoomBootstrap`, `cleanRoomCleanup`,
+      `cleanRoomPytest` — matching the `pip-bootstrap` / `uv-bootstrap`
+      vocabulary already in the file and the `.cleanroom-venv` it manages.
+      `testInEnv` keeps its name: it is the public entry point and it does run
+      tests. `cleanRoomBootstrap`'s help text now says "runs NO tests" outright.
+      **DONE** in py-cookiecut (both halves), py-foundationTools, py-MathTools.
 
 ### G. Back-port — py-foundationTools
 - [ ] G1 — apply tracks A–D to `Makefile`, preserving the three local divergences
