@@ -1,3 +1,12 @@
+---
+last_updated: 2026-08-14
+semver: 0.0.1
+author: Nicholas Bergantz
+status: active
+tracks_done: [A, B, C]
+tracks_open: [D, E, F, G, H]
+---
+
 # Plan 15 — PR #2 review findings
 
 Source: `/review` of PR #2 (`feat/rebuild-for-latest-bkms` → `dev`) on 2026-06-28, plus a

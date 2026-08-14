@@ -1,3 +1,10 @@
+---
+last_updated: 2026-08-14
+semver: 0.0.2
+author: Nicholas Bergantz
+status: active
+---
+
 # Action Plans — Index
 
 Per-gap implementation plans derived from [`.claude/GAPS.md`](../GAPS.md). Each open plan is
@@ -41,6 +48,14 @@ the earlier "ranges, no committed lock" decision and `devops-makefile-principles
 
 ## Open plans
 
-| # | Plan | Status |
-|---|------|--------|
-| 15 | [PR #2 review findings](15-pr2-review-findings.md) | A fixed (CI guard); **B–H open** |
+Each plan's frontmatter (`status`, `tracks_done` / `tracks_partial` / `tracks_open`) is the
+source of truth for its state; this table is a derived summary — keep it in sync.
+
+When a plan's tracks and acceptance criteria are all ticked, set `status: complete` and move
+the file to `.claude/archive/action-plans/`, leaving its row here pointing at the new path.
+
+| # | Plan | Status | Done | Open |
+|---|------|--------|------|------|
+| 15 | [PR #2 review findings](15-pr2-review-findings.md) | active | A, B, C | D, E, F, G, H |
+| 16 | [pip-half bootstrap & recoverability](16-pip-half-bootstrap-recoverability.md) | active | I (G, H partial) | A, B, C, D, E, F |
+| 17 | [kebab folder & dist name (check, don't transform)](17-project-name-derives-folder-and-dist-name.md) | active | — | A, B, C, D, E, F |

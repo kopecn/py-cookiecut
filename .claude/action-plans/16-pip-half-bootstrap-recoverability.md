@@ -1,8 +1,11 @@
 ---
-last_updated: 2026-08-10
-semver: 0.0.3
+last_updated: 2026-08-14
+semver: 0.0.4
 author: Nicholas Bergantz
 status: active
+tracks_done: [I]
+tracks_partial: [G, H]
+tracks_open: [A, B, C, D, E, F]
 ---
 
 # Plan 16 — pip-half bootstrap & recoverability
