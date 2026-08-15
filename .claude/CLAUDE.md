@@ -28,16 +28,18 @@ There are two distinct halves; keep them mentally separate:
 `cookiecutter.json` is the variable contract between the two halves. The variable **keys** use
 **camelCase** (`projectIdentifier`, `packageName`, `moduleName`) — a tooling-internal house
 style — and derived values (`pypiUsername`, `ghIdentifier`) reference earlier keys via Jinja.
-The **values** users supply for the package/module/project identifiers are **PEP-8 snake_case**
-(`python_boilerplate`, `my_package`, `my_module`): that's the import surface and PyPI name. See
+The **values** split by role: `projectIdentifier` (distribution name + project folder + GitHub
+repo slug) is **kebab-case** (`python-boilerplate`), while `packageName`/`moduleName` (the
+import surface) are **PEP-8 snake_case** (`my_package`, `my_module`). See
 `.claude/specs/project-conventions.md` §1. Per-prompt guidance lives in the `__prompts__` block.
 
 ### Generation lifecycle (how a bake actually works)
 
-1. `hooks/pre_gen_project.py` runs **before** rendering — validates `projectIdentifier`,
-   `packageName`, and `moduleName` are PEP-8 snake_case (regex `^[a-z_][a-z0-9_]*$`; rejects
-   hyphens, uppercase, leading digits). Emits a per-variable error and exits non-zero to abort
-   the bake.
+1. `hooks/pre_gen_project.py` runs **before** rendering — validates `projectIdentifier` is
+   kebab-case (regex `^[a-z0-9]+(-[a-z0-9]+)*$`; rejects underscores and uppercase) and that
+   `packageName`/`moduleName` are PEP-8 snake_case (regex `^[a-z_][a-z0-9_]*$`; rejects hyphens,
+   uppercase, leading digits). Emits a per-variable error and exits non-zero to abort the bake.
+   **D1: it validates only — it never rewrites a value.**
 2. Cookiecutter renders `{{cookiecutter.projectIdentifier}}/` with the resolved variables,
    including templated *paths* (`src/{{cookiecutter.packageName}}/{{cookiecutter.moduleName}}.py`).
 3. `hooks/post_gen_project.py` runs **after** rendering (currently only prints a success message).
@@ -86,12 +88,18 @@ discover `test*.py` files and `test*` functions (note the **non-standard** `test
 
 ## Conventions specific to this project
 
-- **Two naming layers** (see `.claude/specs/project-conventions.md` §1): *tooling* identifiers
-  are camelCase house style ("Nick's workflow") — cookiecutter variable **keys**, `test*`
-  function names (`testBakeWithDefaults`), Makefile targets. *Generated* identifiers (the
-  **values** for `projectIdentifier`/`packageName`/`moduleName` → distribution name, import
-  package, module file) are **PEP-8 snake_case** (`my_package`, `my_module`). Don't conflate
-  them: camelCase keys can carry snake_case values.
+- **Three naming layers** (see `.claude/specs/project-conventions.md` §1): *tooling*
+  identifiers are camelCase house style ("Nick's workflow") — cookiecutter variable **keys**,
+  `test*` function names (`testBakeWithDefaults`), Makefile targets. The *distribution* layer
+  (`projectIdentifier` → dist name, project folder, GitHub repo slug) is **kebab-case**
+  (`python-boilerplate`). The *import* layer (`packageName`/`moduleName`) is **PEP-8
+  snake_case** (`my_package`, `my_module`). Don't conflate them: a camelCase key can carry a
+  kebab-case or snake_case value depending on its layer.
+- **One name, three surfaces.** The generated folder, `pyproject [project].name`, and the GitHub
+  repo slug are all `projectIdentifier`. `git clone` names a directory after the repo, so these
+  must not diverge; `testGithubUrlsMatchFolderName` guards it.
+- **`projectName` is headings-only.** It does not set the folder name — that is
+  `projectIdentifier`, typed separately.
 - When editing files under `{{cookiecutter.projectIdentifier}}/`, remember the content is
   **Jinja**, not final Python. `{{ ... }}` and `{% ... %}` are template directives. A file
   that looks broken in isolation may be correct post-render.

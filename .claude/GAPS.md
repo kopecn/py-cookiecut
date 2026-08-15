@@ -38,6 +38,21 @@ Legend: `[ ]` open · `[~]` in progress · `[x]` done
       `packageName`, AND `moduleName` against `^[a-z_][a-z0-9_]*$` (hard-fails on hyphens,
       uppercase, leading digits) with a per-variable error message. Stale "use `_` instead"
       message and single-variable scope both resolved.
+- [x] **REVISED AGAIN (2026-08-14, plan 17): three layers, not two — the distribution name is
+      kebab-case.** The 2026-06-25 split put the *distribution name* in the same layer as the
+      import surface and justified it as "PEP 8 / PEP 503". That was a misapplication: PEP 8
+      governs the import identifier, PEP 503 defines normalization equivalence, and neither
+      prefers underscores for a distribution name. Now: `projectIdentifier` (dist name +
+      project folder + GitHub repo slug) is **kebab-case** (`python-boilerplate`, regex
+      `^[a-z0-9]+(-[a-z0-9]+)*$`); `packageName`/`moduleName` (import surface) stay snake_case;
+      tooling identifiers stay camelCase. `pre_gen_project.py` now carries two regexes.
+      Standing rule **D1: check, do not transform** — the hook aborts on a bad value and never
+      rewrites it. See `.claude/specs/project-conventions.md` §1.
+- [x] **Generated test filename had no separator (2026-08-14, plan 17).** The template shipped
+      `tests/test{{cookiecutter.moduleName}}.py`, rendering `testmy_module.py` — unreadable, and
+      not what the generated `CONTRIBUTING.md` advertised. It never *failed*, because the
+      generated `pyproject.toml` sets the non-standard glob `python_files = ["test*.py"]`, which
+      matched the run-on name. Renamed to `tests/test_{{cookiecutter.moduleName}}.py`.
 
 ## 3. Tooling drift / contradictions
 

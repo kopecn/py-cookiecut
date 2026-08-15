@@ -40,17 +40,25 @@ Then:
 ## Template variables
 
 You'll be prompted for these during the bake (each prompt carries inline help via the
-`__prompts__` block in `cookiecutter.json`). The **import surface** identifiers
-(`projectIdentifier`, `packageName`, `moduleName`) must be **PEP-8 snake_case** —
-`pre_gen_project.py` rejects hyphens, uppercase, and leading digits before rendering.
+`__prompts__` block in `cookiecutter.json`). Two casings apply, and `pre_gen_project.py`
+enforces both before rendering:
+
+- `projectIdentifier` — the distribution name, the project folder, and the GitHub repo slug —
+  must be **lowercase kebab-case** (`python-boilerplate`). Underscores and uppercase are
+  rejected.
+- `packageName` and `moduleName` — the **import surface** — must be **PEP-8 snake_case**
+  (`my_package`). Hyphens are rejected: they are not legal Python identifiers.
+
+The hook **validates and aborts; it never rewrites your input.** A bad value fails the bake with
+a corrective message rather than being silently converted.
 
 | Variable | Convention | Becomes | Example |
 |---|---|---|---|
 | `fullName` | free text | `LICENSE` + pyproject authors | `Nicholas Bergantz` |
 | `email` | email | pyproject authors / PyPI contact | `you@example.com` |
 | `githubUsername` | lowercase | repo + issue URLs | `kopecn` |
-| `projectName` | Title Case OK | README/docs headings | `Python Boilerplate` |
-| `projectIdentifier` | **snake_case** | dist name + project folder (`pyproject [project].name`) | `python_boilerplate` |
+| `projectName` | Title Case or kebab | README/docs headings **only** — does not set the folder name | `Python Boilerplate` |
+| `projectIdentifier` | **kebab-case** | dist name + project folder + GitHub repo slug (`pyproject [project].name`) | `python-boilerplate` |
 | `packageName` | **snake_case** | `src/<packageName>/` — what you `import` | `my_package` |
 | `moduleName` | **snake_case** | `src/<packageName>/<moduleName>.py` | `my_module` |
 | `projectShortDescription` | free text | pyproject `[project].description` | — |
@@ -59,7 +67,13 @@ You'll be prompted for these during the bake (each prompt carries inline help vi
 | `ghIdentifier` | derived | `owner/repo` for GitHub URLs (accept default) | — |
 
 > Note: the cookiecutter variable **keys** are camelCase (`projectIdentifier`) — a
-> tooling-internal house style — but the **values** for the import surface are snake_case.
+> tooling-internal house style — but the **values** are not: the distribution/folder/repo name
+> is kebab-case and the import surface is snake_case.
+
+> **One name, three surfaces.** The generated folder, `pyproject [project].name`, and the GitHub
+> repo slug are all the same string. That is deliberate: `git clone` creates a directory named
+> after the repo, so if they diverged, a contributor would land in a differently-named directory
+> than the bake produced.
 
 ## Suggestions / Forking?
 

@@ -58,4 +58,4 @@ the file to `.claude/archive/action-plans/`, leaving its row here pointing at th
 |---|------|--------|------|------|
 | 15 | [PR #2 review findings](15-pr2-review-findings.md) | active | A, B, C | D, E, F, G, H |
 | 16 | [pip-half bootstrap & recoverability](16-pip-half-bootstrap-recoverability.md) | active | I (G, H partial) | A, B, C, D, E, F |
-| 17 | [kebab folder & dist name (check, don't transform)](17-project-name-derives-folder-and-dist-name.md) | active | — | A, B, C, D, E, F |
+| 17 | [kebab folder & dist name (check, don't transform)](17-project-name-derives-folder-and-dist-name.md) | complete | A, B, C, D, E, F | — |

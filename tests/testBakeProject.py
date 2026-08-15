@@ -98,7 +98,7 @@ def testGeneratedModuleIsImportable(cookies: Cookies) -> None:
     with bakeInTempDir(
         cookies,
         extra_context={
-            "projectIdentifier": "sample_project",
+            "projectIdentifier": "sample-project",
             "packageName": "sample_pkg",
             "moduleName": "sample_mod",
             "version": "1.2.3",
@@ -111,11 +111,66 @@ def testGeneratedModuleIsImportable(cookies: Cookies) -> None:
         assert runInsideDir("pytest", str(result.project)) == 0
 
 
-def testBakeRejectsHyphenatedProjectIdentifier(cookies: Cookies) -> None:
-    """pre_gen hook aborts the bake on a non-snake_case projectIdentifier."""
-    result = cookies.bake(extra_context={"projectIdentifier": "bad-name"})
+def testFolderNameIsKebabCase(cookies: Cookies) -> None:
+    """Default bake produces a kebab-case top-level folder, not snake_case."""
+    with bakeInTempDir(cookies) as result:
+        assert result.project_path is not None
+        assert result.project_path.name == "python-boilerplate"
+
+
+def testDistributionNameMatchesFolderName(cookies: Cookies) -> None:
+    """[project].name in the baked pyproject.toml matches the baked folder name."""
+    with bakeInTempDir(cookies) as result:
+        assert result.project_path is not None
+        pyprojectPath = result.project_path.joinpath("pyproject.toml")
+        with open(pyprojectPath) as f:
+            contents = f.read()
+        assert f'name = "{result.project_path.name}"' in contents
+
+
+def testGeneratedPackageStaysSnakeCase(cookies: Cookies) -> None:
+    """The import package stays snake_case even though the root folder is kebab-case."""
+    with bakeInTempDir(cookies) as result:
+        assert result.project_path is not None
+        packagePath = result.project_path.joinpath("src", "my_package")
+        assert packagePath.is_dir()
+
+
+def testBakeRejectsSnakeCaseProjectIdentifier(cookies: Cookies) -> None:
+    """D1: pre_gen hook aborts (does not silently convert) a snake_case projectIdentifier."""
+    result = cookies.bake(extra_context={"projectIdentifier": "my_project"})
     assert result.exit_code != 0
     assert result.exception is not None
+
+
+def testBakeRejectsUppercaseProjectIdentifier(cookies: Cookies) -> None:
+    """pre_gen hook aborts the bake on an uppercase projectIdentifier."""
+    result = cookies.bake(extra_context={"projectIdentifier": "MyProject"})
+    assert result.exit_code != 0
+    assert result.exception is not None
+
+
+def testGithubUrlsMatchFolderName(cookies: Cookies) -> None:
+    """Folder name, [project.urls].homepage, and the CONTRIBUTING.md clone dir all match."""
+    with bakeInTempDir(cookies) as result:
+        assert result.project_path is not None
+        folderName = result.project_path.name
+
+        pyprojectPath = result.project_path.joinpath("pyproject.toml")
+        with open(pyprojectPath) as f:
+            pyprojectContents = f.read()
+        homepageLine = next(
+            line for line in pyprojectContents.splitlines() if line.startswith("homepage")
+        )
+        assert homepageLine.rstrip().endswith(f"/{folderName}\"")
+
+        contributingPath = result.project_path.joinpath("CONTRIBUTING.md")
+        with open(contributingPath) as f:
+            contributingContents = f.read()
+        cdLine = next(
+            line for line in contributingContents.splitlines() if line.strip().startswith("cd ")
+        )
+        assert cdLine.strip() == f"cd {folderName}"
 
 
 def testBakeRejectsUppercasePackageName(cookies: Cookies) -> None:

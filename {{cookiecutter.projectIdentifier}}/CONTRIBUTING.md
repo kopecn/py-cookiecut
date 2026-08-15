@@ -48,7 +48,7 @@ Follow these steps to set up `{{ cookiecutter.projectIdentifier }}` locally:
 2. **Clone** your fork:
 
     ```sh
-    git clone git@github.com:your_name_here/{{ cookiecutter.projectIdentifier }}.git
+    git clone git@github.com:{{ cookiecutter.githubUsername }}/{{ cookiecutter.projectIdentifier }}.git
     cd {{ cookiecutter.projectIdentifier }}
     ```
 
@@ -117,7 +117,7 @@ Before submitting a pull request, make sure:
 To run a targeted test suite:
 
 ```sh
-pytest tests/test_{{ cookiecutter.projectIdentifier }}.py
+pytest tests/test_{{ cookiecutter.moduleName }}.py
 ```
 
 

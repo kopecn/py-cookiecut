@@ -14,23 +14,60 @@ GAPS § it resolves and the source plan (now removed).
 
 ## 1. Naming convention — two layers (GAPS §2, plan 02)
 
-**Verdict (revised 2026-06-25 — supersedes the earlier "keep camelCase everywhere").** Split
-the two layers that were previously conflated:
+**Verdict (revised 2026-08-14, plan 17 — supersedes the 2026-06-25 two-layer split, which
+itself superseded "keep camelCase everywhere").** The 2026-06-25 revision was right that the
+import surface must be snake_case, but wrong to put the *distribution name* in that same layer.
+There are **three** layers, not two:
 
-- **Generated identifiers → PEP-8 snake_case.** The *values* a user supplies for
-  `projectIdentifier`, `packageName`, `moduleName` — i.e. the distribution name, the import
-  package, and the module file — are **lowercase snake_case** (`python_boilerplate`,
-  `my_package`, `my_module`). This is what the import surface and PyPI consumers see, so it
-  follows PEP 8 / PEP 503. The `cookiecutter.json` defaults and `__prompts__` already teach
-  this; `pre_gen_project.py` enforces it (regex `^[a-z_][a-z0-9_]*$`).
-- **Tooling identifiers → camelCase (house style, kept).** The cookiecutter variable **keys**
+- **Distribution layer → lowercase kebab-case.** `projectIdentifier` — the distribution name,
+  the generated project folder, and the GitHub repo slug — is **kebab-case**
+  (`python-boilerplate`). Enforced by `pre_gen_project.py` (regex `^[a-z0-9]+(-[a-z0-9]+)*$`).
+- **Import layer → PEP-8 snake_case.** `packageName` and `moduleName` — what consumers
+  `import` — stay **snake_case** (`my_package`, `my_module`). Enforced by the same hook
+  (regex `^[a-z_][a-z0-9_]*$`). This is not stylistic: hyphens are not legal Python
+  identifiers, so `import my-package` is a syntax error.
+- **Tooling layer → camelCase (house style, kept).** The cookiecutter variable **keys**
   themselves (`projectIdentifier`, `packageName`, `moduleName`), `test*` function names
   (`testBakeWithDefaults`), and some Makefile targets stay camelCase ("Nick's workflow").
   These are internal tooling names, never an import surface. Ruff `N`/pep8-naming stays omitted
   (§4) so these don't fail CI.
 
-**Why:** camelCase as an importable package (`import myPackage`) surprises consumers and fights
-PyPI norms; the deliberate house style only ever made sense for tooling-internal names.
+**Why kebab for the distribution name:** hyphens are the conventional spelling for a Python
+distribution; underscores are legal but unconventional. The 2026-06-25 text justified the
+snake_case distribution name as following "PEP 8 / PEP 503" — **that was a misapplication.**
+PEP 8 governs the *import* identifier, and PEP 503 defines *normalization equivalence* (pip
+treats `python-boilerplate` and `python_boilerplate` as the same project). Neither expresses a
+preference for underscores in a distribution name. That bad reasoning is what produced the
+defect plan 17 fixed.
+
+**Why camelCase is still excluded from both generated layers:** `import myPackage` surprises
+consumers and fights PyPI norms; the house style only ever made sense for tooling-internal
+names.
+
+### One name, three surfaces
+
+The generated **folder name**, `pyproject [project].name`, and the **GitHub repo slug** are all
+the same string — `projectIdentifier`. `ghIdentifier` composes from it, so every GitHub URL
+inherits it. This is load-bearing, not incidental: `git clone` creates a directory named after
+the repo, so if these diverged a contributor would land in a differently-named directory than
+the one the bake produced. `tests/testBakeProject.py::testGithubUrlsMatchFolderName` guards it.
+
+### D1 — check, do not transform
+
+**The bake validates what the user typed; it never rewrites it.** A bad identifier is a loud,
+non-zero-exit abort with a corrective message ("Did you mean 'my-project'?"), never a silent
+fix-up. The suggestion in the error text is display-only and is never applied.
+
+This is a standing rule, recorded so a future change doesn't reintroduce auto-correction.
+Cookiecutter ≥2.x registers `SlugifyExtension` in `default_extensions`, so a `slugify` filter is
+available with no `_extensions` key and no new dependency — deriving `projectIdentifier` from
+`projectName` is *easy*, which is exactly why this rule is written down. It was rejected: slugify
+silently flattens concatenated CamelCase (`py-foundationTools` → `py-foundationtools`, word
+breaks lost), and a name the user did not choose is worse than an error they can act on.
+
+Corollary: `projectName` (prompt 4) is **headings-only**. It does not set the folder name and is
+not derived from — the hyphenated folder/dist name is typed independently at `projectIdentifier`
+(prompt 5).
 
 **Discoverability:** per-prompt help lives in the `cookiecutter.json` `__prompts__` block
 (cookiecutter ≥2.2) so guidance shows during the interactive walkthrough; a quick-reference
