@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "py-cookiecut"
-version = "0.0.1"
+version = "0.0.2"
 description = "Cookiecutter template that match's Nick's workflows"
 readme = {file = "README.md", content-type = "text/markdown"}
 requires-python = ">=3.10"
@@ -28,23 +28,26 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: CPython",
     "Topic :: Software Development",
 ]
+# Module-level deps are NAMES ONLY — never version-pinned (BKM: only the application
+# layer pins; module-level pins cause dependency conflicts). Pinned/tag-pinned and
+# git-based pointers live in requirements*.txt, which the Makefile installs from.
 dependencies = [
-    "cookiecutter>=2.6.0",
-    "pytest>=8.4.1",
-    "pytest-cookies>=0.7.0",
+    "cookiecutter",
+    "pytest",
+    "pytest-cookies",
 ]
 
 [project.optional-dependencies]
-develop = [
+dev = [
     "pytest",
-    "black",
+    "pytest-asyncio",
+    "ruff",
     "build",
     "bump2version",
-    "pylint",
     "mypy",
+    "ty",
     "twine",
 ]
-personal_repos = []
 
 
 [project.urls]
@@ -55,3 +58,30 @@ homepage = "https://github.com/kopecn/py-cookiecut"
 testpaths = ["tests/*"]
 python_functions = ["test*"]
 python_files = ["test*.py"]
+
+# Path resolution: the Makefile scopes quality targets via PY_* vars (.env), and this
+# root half has NO src/ — its Python lives in hooks/ + tests/ (PY_SRC defaults to
+# hooks). The src/files config below is the fallback that makes a bare `ruff check .` /
+# `mypy .` (no path args) and IDE integrations resolve the same scope. The Makefile is
+# byte-identical across halves.
+[tool.ruff]
+target-version = "py310"  # support floor; default dev interpreter is 3.13
+line-length = 100
+src = ["hooks", "tests"]
+
+[tool.ruff.lint]
+# camelCase is a deliberate house convention ("Nick's workflow") — pep8-naming (N)
+# is intentionally omitted so it never fails CI.
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["D301"]
+# TODO(G5): decide ty (preview type-checker) in/out — owned by Plan 11.
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+files = ["hooks", "tests"]
+
+# cookiecutter and pytest_cookies ship no py.typed marker / stubs.
+[[tool.mypy.overrides]]
+module = ["cookiecutter.*", "pytest_cookies.*"]
+ignore_missing_imports = true
