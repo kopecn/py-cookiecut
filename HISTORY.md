@@ -8,7 +8,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- `.claude/CLAUDE.md` operating spec and `.claude/GAPS.md` refactor backlog.
 - `HISTORY.md` changelog (this file) plus a documented changelog BKM in `CONTRIBUTING.md`.
 
 ### Changed

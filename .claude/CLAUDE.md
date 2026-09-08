@@ -10,9 +10,6 @@ portions of the template tooling and the generated-project template. Do **not** 
 legacy patterns for backward-compatibility reasons — there are no downstream consumers to
 protect yet. Prefer decisive replacement over incremental patching.
 
-The current known defects and intended changes are tracked in [`GAPS.md`](./GAPS.md) in this
-directory. Read it before starting work; update it as items are resolved or added.
-
 ## What this repository is
 
 `py-cookiecut` is a **Cookiecutter template** — a meta-project that *generates* Python
@@ -61,12 +58,12 @@ All commands run from the repo root. The `Makefile` loads `.env` (`PYTHON=python
 
 ```bash
 make help            # list documented targets
-make devInstall      # editable install + dev deps (pytest, pylint, black, mypy, ...)
+make installDev      # editable install + dev deps (flake8, black, mypy, pytest, ...)
 make test            # run the bake tests (pytest)
-make lint            # pylint src/   (NOTE: this repo has no src/ — see GAPS.md)
-make format          # black src/
-make typecheck       # mypy src/
-make fullCheck       # lint + typecheck + test
+make lint            # flake8  (first-class)
+make format          # black   (first-class)
+make typecheck       # mypy
+make fullCheck       # lint + typecheck + test  (FIRST-CLASS gate)
 make build           # build sdist/wheel to validate packaging
 make testInEnv       # full clean-room: fresh venv, install, run tests, teardown
 ```
@@ -84,7 +81,7 @@ discover `test*.py` files and `test*` functions (note the **non-standard** `test
 
 > Many `Makefile` targets (`lint`, `format`, `typecheck`, `docs`) assume directories/tools
 > that don't match this repo's actual layout — they are inherited from the generated-project
-> Makefile. See `GAPS.md` before relying on them.
+> Makefile. 
 
 ## Conventions specific to this project
 

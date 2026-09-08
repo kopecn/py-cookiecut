@@ -2,8 +2,7 @@
 
 Durable verdicts distilled from closed action-plans. These are settled; do **not**
 re-litigate without a new explicit decision. Companion to
-`.claude/specs/devops-makefile-principles.md` and `.claude/GAPS.md`. Each section notes the
-GAPS § it resolves and the source plan (now removed).
+`.claude/specs/devops-makefile-principles.md`.
 
 > Two-halves reminder: "root" = template tooling that runs in *this* repo; "template" =
 > files under `{{cookiecutter.projectIdentifier}}/` that render into a new project. Most
@@ -77,15 +76,15 @@ table of all variables lives in the root README.
 
 ## 2. Python version policy (GAPS §3, §7, §8, plan 04)
 
-**Verdict — canonical set:** default **3.13**, support floor **3.10**.
+**Verdict — canonical set:** default **3.13**, support floor **3.11**.
 
-- `requires-python = ">=3.10"` (both halves).
+- `requires-python = ">=3.11"` (both halves).
 - `.python-version` = `3.13` (both halves; template now ships one for parity).
-- `.env`: `DEFAULT_PYTHON=3.13`, `PYTHONS=3.10 3.11 3.12 3.13`. Makefile `?=` fallbacks match.
-- `classifiers` advertise 3.10–3.13.
-- CI test matrix runs 3.10/3.11/3.12 (+ default).
+- `.env`: `DEFAULT_PYTHON=3.13`, `PYTHONS=3.11 3.12 3.13 3.14 3.15`. Makefile `?=` fallbacks match.
+- `classifiers` advertise 3.11–3.15.
+- CI test matrix runs 3.11/3.12 (+ default) 3.14/3.15.
 
-**tomllib-floor pattern.** `tomllib` is stdlib only on ≥3.11, but the floor is 3.10. `make
+**tomllib-floor pattern.** `tomllib` is stdlib only on ≥3.11, but the floor is 3.11. `make
 version` therefore tries `tomllib` and falls back to `grep`/`cut`, dependency-free:
 
 ```make
@@ -116,30 +115,32 @@ Release flow: bump version → merge to `prod` → `tag-on-prod.yml` tags `v<ver
 
 ## 4. Lint & typecheck stack (GAPS §3, §6, plan 03)
 
-**Verdict.** **ruff** (lint + format) + **mypy `--strict`**. black/pylint removed; `.pylintrc`
-deleted (both halves).
+**Verdict.** FIRST-CLASS: **flake8** (lint) + **black** (format) + **mypy `--strict`**, run via
+**pip** — `make lint` / `format` / `typecheck` / `fullCheck`. `ruff` and `ty` are kept installed
+but **second-class** (available, not wired into any gate). The `uv-` targets are a second-class uv
+*runner* over the same first-class tools.
 
 **Config-only per-half path resolution (the §6 trick).** The Makefile is byte-identical across
-halves, so `ruff check .` / `mypy .` run with **no path args** and resolve scope from each
-half's `pyproject.toml`:
+halves. flake8 reads each half's `.flake8`, black reads `[tool.black]`, and mypy resolves scope
+from each half's `pyproject.toml`, so a bare invocation (no path args) and IDE integrations get the
+same scope:
 
-- Root half: `[tool.ruff] src = ["hooks","tests"]`, `[tool.mypy] files = ["hooks","tests"]`
-  (this repo has no `src/`).
-- Template half: `src`/`files = ["src","tests"]` (generated projects use a `src/` layout).
+- Root half: `[tool.mypy] files = ["hooks","tests"]` (this repo has no `src/`); flake8/black scan
+  `hooks`+`tests` via the Makefile's `PY_*` vars.
+- Template half: `files = ["src","tests"]` (generated projects use a `src/` layout).
 
-`target-version = "py310"` / `python_version = "3.10"` (the support floor, §2). Lint selection
-starts at `["E","F","I","UP","B"]`; **pep8-naming (`N`) is intentionally omitted** so the
+`target-version` / `python_version = "3.11"` (the support floor, §2). flake8 selection is
+`E, F, B` (flake8-bugbear supplies `B`); the `W` series is not enforced, and ruff's `I`/`UP` have
+no flake8 equivalent so they are **dropped in the swap**. pep8-naming (`N`) is not enabled, so the
 camelCase house style (§1) never fails CI.
 
-**Makefile quality targets (plan 11).**
+**Makefile quality targets.**
 
-- `uv-lint` → `ruff check $(PY_ALL)` — read-only; non-zero exit for CI.
-- `uv-format` → `ruff format $(PY_ALL)` **then** `ruff check --fix --unsafe-fixes $(PY_ALL)`.
-  **`--unsafe-fixes` is intentional and load-bearing here** — it is relied upon after the
-  2026-06-25 findings and is marked `# KEEP` in the recipe. **Do not strip it** in cleanup/refactor
-  passes (removing it has regressed this target before). There is **no** separate `uv-lintFix`
-  target; fixing happens through `uv-format`.
-- `uv-typecheck` → `mypy …`; `uv-fullCheck` composes `uv-lint uv-typecheck uv-test`.
+- `lint` → `flake8 $(PY_ALL)` — read-only; non-zero exit for CI. (`uv-lint` is the uv-runner form.)
+- `format` → `black $(PY_ALL)`. black formats only; there is **no** lint-autofix pass (flake8 has
+  none), so there is no `lintFix` target.
+- `typecheck` → `mypy …`; `fullCheck` composes `lint typecheck test`. The uv-runner mirror
+  `uv-fullCheck` composes `uv-lint uv-typecheck uv-test` (what CI currently invokes).
 
 **Decision D1 — `ty` is OUT.** Astral's preview type-checker is pre-release; `uv-typecheck-ty`
 was removed from `.PHONY` (it had no recipe) and is not part of `uv-fullCheck`. A comment marks it
@@ -210,7 +211,7 @@ an application-layer concern. Where any of them disagree, **this BKM wins**.
 
 - `keywords` seeded from context (`{{ packageName }}`, `python`, `package`).
 - `classifiers` include Development Status, Intended Audience, MIT license, OS-Independent, and
-  `Programming Language :: Python :: 3.10`–`3.13` — the version rows **track the §2 canonical
+  `Programming Language :: Python :: 3.11`–`3.15` — the version rows **track the §2 canonical
   matrix** (keep in sync).
 - `dependencies` left **empty with a guiding comment** (a fresh library has no runtime deps;
   when added, declare **names only — never pins or git URLs** per §6; those go in

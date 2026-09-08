@@ -8,7 +8,7 @@ name = "py-cookiecut"
 version = "0.0.2"
 description = "Cookiecutter template that match's Nick's workflows"
 readme = {file = "README.md", content-type = "text/markdown"}
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = {text = "MIT"}
 authors = [
     { name = "Nicholas Bergantz", email = "nicholas.bergantz@gmail.com" },
@@ -21,7 +21,6 @@ classifiers = [
     "Natural Language :: English",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -37,16 +36,22 @@ dependencies = [
     "pytest-cookies",
 ]
 
+# First-class quality tooling: flake8 (lint) + black (format) + mypy (typecheck).
+# ruff and ty are kept installed but SECOND-CLASS — available, not wired into the gate.
 [project.optional-dependencies]
 dev = [
     "pytest",
     "pytest-asyncio",
-    "ruff",
+    "flake8",
+    "flake8-bugbear",
+    "black",
+    "mypy",
     "build",
     "bump2version",
-    "mypy",
-    "ty",
     "twine",
+    # second-class (available, not in the gate):
+    "ruff",
+    "ty",
 ]
 
 
@@ -61,9 +66,17 @@ python_files = ["test*.py"]
 
 # Path resolution: the Makefile scopes quality targets via PY_* vars (.env), and this
 # root half has NO src/ — its Python lives in hooks/ + tests/ (PY_SRC defaults to
-# hooks). The src/files config below is the fallback that makes a bare `ruff check .` /
-# `mypy .` (no path args) and IDE integrations resolve the same scope. The Makefile is
-# byte-identical across halves.
+# hooks). flake8 reads `.flake8`; black reads `[tool.black]`; mypy reads `[tool.mypy]`
+# below — so a bare invocation (no path args) and IDE integrations resolve the same
+# scope. The Makefile is byte-identical across halves.
+
+# FIRST-CLASS formatter. line-length matches flake8's max-line-length (100).
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+
+# SECOND-CLASS. ruff is kept installed/configured but is not wired into the gate;
+# flake8 + black own linting/formatting. See `.flake8` and [tool.black].
 [tool.ruff]
 target-version = "py310"  # support floor; default dev interpreter is 3.13
 line-length = 100
