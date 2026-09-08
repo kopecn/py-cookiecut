@@ -76,15 +76,15 @@ table of all variables lives in the root README.
 
 ## 2. Python version policy (GAPS §3, §7, §8, plan 04)
 
-**Verdict — canonical set:** default **3.13**, support floor **3.10**.
+**Verdict — canonical set:** default **3.13**, support floor **3.11**.
 
-- `requires-python = ">=3.10"` (both halves).
+- `requires-python = ">=3.11"` (both halves).
 - `.python-version` = `3.13` (both halves; template now ships one for parity).
-- `.env`: `DEFAULT_PYTHON=3.13`, `PYTHONS=3.10 3.11 3.12 3.13`. Makefile `?=` fallbacks match.
-- `classifiers` advertise 3.10–3.13.
-- CI test matrix runs 3.10/3.11/3.12 (+ default).
+- `.env`: `DEFAULT_PYTHON=3.13`, `PYTHONS=3.11 3.12 3.13 3.14 3.15`. Makefile `?=` fallbacks match.
+- `classifiers` advertise 3.11–3.15.
+- CI test matrix runs 3.11/3.12 (+ default) 3.14/3.15.
 
-**tomllib-floor pattern.** `tomllib` is stdlib only on ≥3.11, but the floor is 3.10. `make
+**tomllib-floor pattern.** `tomllib` is stdlib only on ≥3.11, but the floor is 3.11. `make
 version` therefore tries `tomllib` and falls back to `grep`/`cut`, dependency-free:
 
 ```make
@@ -129,7 +129,7 @@ same scope:
   `hooks`+`tests` via the Makefile's `PY_*` vars.
 - Template half: `files = ["src","tests"]` (generated projects use a `src/` layout).
 
-`target-version` / `python_version = "3.10"` (the support floor, §2). flake8 selection is
+`target-version` / `python_version = "3.11"` (the support floor, §2). flake8 selection is
 `E, F, B` (flake8-bugbear supplies `B`); the `W` series is not enforced, and ruff's `I`/`UP` have
 no flake8 equivalent so they are **dropped in the swap**. pep8-naming (`N`) is not enabled, so the
 camelCase house style (§1) never fails CI.
@@ -211,7 +211,7 @@ an application-layer concern. Where any of them disagree, **this BKM wins**.
 
 - `keywords` seeded from context (`{{ packageName }}`, `python`, `package`).
 - `classifiers` include Development Status, Intended Audience, MIT license, OS-Independent, and
-  `Programming Language :: Python :: 3.10`–`3.13` — the version rows **track the §2 canonical
+  `Programming Language :: Python :: 3.11`–`3.15` — the version rows **track the §2 canonical
   matrix** (keep in sync).
 - `dependencies` left **empty with a guiding comment** (a fresh library has no runtime deps;
   when added, declare **names only — never pins or git URLs** per §6; those go in

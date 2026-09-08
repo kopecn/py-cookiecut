@@ -26,7 +26,7 @@ ifneq (,$(wildcard .env))
 endif
 
 # Defaults (overridable via .env — the user-editable surface). Keep in sync with .env.
-PYTHONS ?= 3.10 3.11 3.12 3.13
+PYTHONS ?= 3.11 3.12 3.13 3.14 3.15
 DEFAULT_PYTHON ?= 3.13
 PYTHON ?= python3
 VENV ?= .cleanroom-venv
