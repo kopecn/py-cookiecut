@@ -10,9 +10,6 @@ portions of the template tooling and the generated-project template. Do **not** 
 legacy patterns for backward-compatibility reasons — there are no downstream consumers to
 protect yet. Prefer decisive replacement over incremental patching.
 
-The current known defects and intended changes are tracked in [`GAPS.md`](./GAPS.md) in this
-directory. Read it before starting work; update it as items are resolved or added.
-
 ## What this repository is
 
 `py-cookiecut` is a **Cookiecutter template** — a meta-project that *generates* Python
@@ -84,7 +81,7 @@ discover `test*.py` files and `test*` functions (note the **non-standard** `test
 
 > Many `Makefile` targets (`lint`, `format`, `typecheck`, `docs`) assume directories/tools
 > that don't match this repo's actual layout — they are inherited from the generated-project
-> Makefile. See `GAPS.md` before relying on them.
+> Makefile. 
 
 ## Conventions specific to this project
 

@@ -2,8 +2,7 @@
 
 Durable verdicts distilled from closed action-plans. These are settled; do **not**
 re-litigate without a new explicit decision. Companion to
-`.claude/specs/devops-makefile-principles.md` and `.claude/GAPS.md`. Each section notes the
-GAPS § it resolves and the source plan (now removed).
+`.claude/specs/devops-makefile-principles.md`.
 
 > Two-halves reminder: "root" = template tooling that runs in *this* repo; "template" =
 > files under `{{cookiecutter.projectIdentifier}}/` that render into a new project. Most

@@ -29,12 +29,10 @@ does not duplicate its checklist.
 
 1. Add bake-level dry-run tests for the exclusions, bootstrap target, ensurepip-only
    guard, and requirements-before-package ordering.
-2. Correct `.claude/GAPS.md` where it still calls build/validation
-   installer-agnostic.
-3. Add one concise note to `devops-makefile-principles.md`: Python 3.12 stopped
+2. Add one concise note to `devops-makefile-principles.md`: Python 3.12 stopped
    bundling setuptools in `ensurepip`, so destructive package flushes must preserve or
    document recovery of the build backend.
-4. Verify the Makefiles remain identical and run the repository gate.
+3. Verify the Makefiles remain identical and run the repository gate.
 
 Do not repeat the completed foundation back-port, guard unrelated install targets,
 vendor wheels, or redesign the Makefile.

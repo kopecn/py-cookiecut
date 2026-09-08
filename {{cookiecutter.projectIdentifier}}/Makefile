@@ -31,8 +31,6 @@ DEFAULT_PYTHON ?= 3.13
 PYTHON ?= python3
 VENV ?= .cleanroom-venv
 
-# Quality-target paths. ROOT half has NO src/ — its Python lives in hooks/ + tests/
-# (see GAPS.md §6). The template half overrides these to src/. Overridable via .env.
 PY_SRC ?= hooks
 PY_TESTS ?= tests
 PY_EXAMPLES ?=
