@@ -60,7 +60,11 @@ Legend: `[ ]` open · `[~]` in progress · `[x]` done
       deleted. `[tool.ruff]`/`[tool.mypy]` config **added to both pyprojects (2026-06-25)** with
       config-only per-half path resolution (root→`hooks,tests`; template→`src,tests`), `py310`
       floor, `N` omitted for camelCase. See `.claude/specs/project-conventions.md` §4. ty (preview)
-      deferred to G5. *(Surfaced 7 real pre-existing lint findings in hooks/tests — cleanup is
+      deferred to G5.
+      > **SUPERSEDED (2026-09-07).** Toolchain reverted to first-class **pip / flake8 / black**;
+      > ruff + ty are now second-class (installed, not in the gate). `.flake8` + `[tool.black]`
+      > added to both halves; first-class `make lint`/`format`/`typecheck`/`fullCheck`. flake8
+      > cannot express ruff's `UP` (pyupgrade), which is dropped. See project-conventions.md §4. *(Surfaced 7 real pre-existing lint findings in hooks/tests — cleanup is
       separate.)*
 - [x] `requirements_dev.txt` / `requirements_prod.txt` — **deleted**.
 - [x] Dev-dependency 3-way duplication — **consolidated**: pyproject `[dev]` extra (renamed

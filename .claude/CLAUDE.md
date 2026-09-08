@@ -61,12 +61,12 @@ All commands run from the repo root. The `Makefile` loads `.env` (`PYTHON=python
 
 ```bash
 make help            # list documented targets
-make devInstall      # editable install + dev deps (pytest, pylint, black, mypy, ...)
+make installDev      # editable install + dev deps (flake8, black, mypy, pytest, ...)
 make test            # run the bake tests (pytest)
-make lint            # pylint src/   (NOTE: this repo has no src/ — see GAPS.md)
-make format          # black src/
-make typecheck       # mypy src/
-make fullCheck       # lint + typecheck + test
+make lint            # flake8  (first-class)
+make format          # black   (first-class)
+make typecheck       # mypy
+make fullCheck       # lint + typecheck + test  (FIRST-CLASS gate)
 make build           # build sdist/wheel to validate packaging
 make testInEnv       # full clean-room: fresh venv, install, run tests, teardown
 ```

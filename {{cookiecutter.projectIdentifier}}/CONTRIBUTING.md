@@ -68,8 +68,8 @@ Follow these steps to set up `{{ cookiecutter.projectIdentifier }}` locally:
 5. **Run linters, type checks, and tests**:
 
     ```sh
-    make uv-fullCheck     # ruff + mypy + pytest
-    # or individually: make uv-lint · make uv-typecheck · make uv-test
+    make fullCheck        # flake8 + mypy + pytest  (first-class)
+    # or individually: make lint · make typecheck · make test
     ```
 
 6. **Commit and push your changes**:
