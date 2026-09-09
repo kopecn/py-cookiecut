@@ -2,7 +2,7 @@
 
 Forward-looking principles for the `py-cookiecut` Makefile. These are the distilled lessons we
 are choosing to design around — the WHY behind each decision, plus the verdict on the best way
-to do it. Companion to `.claude/plans/nearly-all-of-the-jaunty-sloth.md` and `.claude/GAPS.md`.
+to do it.
 
 Per-command reasoning is appended as we finalize each target in the command-by-command pass.
 

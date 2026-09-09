@@ -162,7 +162,7 @@ def testGithubUrlsMatchFolderName(cookies: Cookies) -> None:
         homepageLine = next(
             line for line in pyprojectContents.splitlines() if line.startswith("homepage")
         )
-        assert homepageLine.rstrip().endswith(f"/{folderName}\"")
+        assert homepageLine.rstrip().endswith(f'/{folderName}"')
 
         contributingPath = result.project_path.joinpath("CONTRIBUTING.md")
         with open(contributingPath) as f:

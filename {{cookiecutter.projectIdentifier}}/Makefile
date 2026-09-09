@@ -12,6 +12,7 @@
 	uv-lifecycle-test \
 	dev setup \
 	installDev e refresh pip-bootstrap \
+	lint format typecheck fullCheck \
 	test check-pip cleanRoomCleanup cleanRoomBootstrap cleanRoomPytest testInEnv \
 	build validateBuild release-test release \
 	nuke list
@@ -25,7 +26,7 @@ ifneq (,$(wildcard .env))
 endif
 
 # Defaults (overridable via .env — the user-editable surface). Keep in sync with .env.
-PYTHONS ?= 3.10 3.11 3.12 3.13
+PYTHONS ?= 3.11 3.12 3.13 3.14 3.15
 DEFAULT_PYTHON ?= 3.13
 PYTHON ?= python3
 VENV ?= .cleanroom-venv
@@ -103,7 +104,7 @@ endef
 # MARK: - HELP
 # ============================================================================
 help:  ## Show this help
-	@echo "$(REPO) — make targets   (bare = pip · uv-… = uv path)"
+	@echo "$(REPO) — make targets   (bare = pip · FIRST-CLASS · uv-… = uv runner · second-class)"
 	@echo "config: DEFAULT_PYTHON=$(DEFAULT_PYTHON)  PYTHONS=$(PYTHONS)"
 	@echo ""
 	@awk 'BEGIN {FS = ":.*?## "} \
@@ -274,18 +275,12 @@ uv-refresh: check-uv  ## Clean cache + reinstall from requirements + upgrade edi
 # ============================================================================
 # MARK: - UV · QUALITY
 # ============================================================================
-##@ UV · Quality
-uv-lint: check-uv  ## Run ruff linter (read-only; non-zero exit for CI)
-	$(UV) ruff check $(PY_ALL)
+##@ UV · Quality  (second-class uv RUNNER for the first-class flake8/black/mypy tools)
+uv-lint: check-uv  ## Run flake8 via uv (read-only; non-zero exit for CI)
+	$(UV) flake8 $(PY_ALL)
 
-uv-format: check-uv  ## Format code with ruff
-	uv run --no-project ruff format $(PY_ALL)
-# 	$(UV) ruff format $(PY_ALL)
-# KEEP --unsafe-fixes: intentional, added after findings on 2026-06-25.
-# Do NOT strip in cleanup/refactor passes — the unsafe autofixes here are relied
-# upon deliberately. Removing it has regressed this target before.
-	uv run --no-project  ruff check --fix --unsafe-fixes $(PY_ALL)
-# 	$(UV) ruff check --fix --unsafe-fixes $(PY_ALL)
+uv-format: check-uv  ## Format code with black via uv
+	$(UV) black $(PY_ALL)
 
 uv-typecheck: check-uv  ## Strict type check with mypy
 ifeq ($(strip $(MYPY_PKGS)),)
@@ -318,6 +313,7 @@ uv-test-all: check-uv  ## Run tests across all configured Python versions (.venv
 		venv=".venvs/$$py"; \
 		[ -d "$$venv" ] || uv venv --python $$py "$$venv"; \
 		if ( . "$$venv/bin/activate" && \
+		     uv pip install -q -r requirements.txt && \
 		     uv pip install -q -e ".[dev]" && \
 		     python -m pytest ); then \
 			echo "PASS: Python $$py"; \
@@ -393,6 +389,26 @@ e:  ## Install this package in editable mode (pip install -e .)
 refresh:  ## Refresh pip packages: reinstall from requirements + upgrade editable dev
 	$(PIP) install -r requirements.txt
 	$(PIP) install --upgrade -e ".[dev]"
+
+# ============================================================================
+# MARK: - PIP · QUALITY  (FIRST-CLASS)
+# ============================================================================
+##@ PIP · Quality  (FIRST-CLASS: flake8 + black + mypy, run on ambient $(PYTHON))
+lint:  ## Run flake8 (read-only; non-zero exit for CI) — first-class
+	$(PYTHON) -m flake8 $(PY_ALL)
+
+format:  ## Format code with black — first-class
+	$(PYTHON) -m black $(PY_ALL)
+
+typecheck:  ## Strict type check with mypy — first-class
+ifeq ($(strip $(MYPY_PKGS)),)
+	$(PYTHON) -m mypy $(PY_SRC) $(PY_TESTS) $(PY_EXAMPLES)
+else
+	$(PYTHON) -m mypy $(MYPY_PKGS)
+	$(PYTHON) -m mypy $(PY_TESTS) $(PY_EXAMPLES)
+endif
+
+fullCheck: lint typecheck test  ## FIRST-CLASS gate: flake8 + mypy + pytest
 
 # nuke's inverse (see the comment on `nuke`). Rebuilds the build backend
 # (setuptools/wheel) that `ensurepip` never bundles on Python >= 3.12 (E1).
@@ -547,3 +563,23 @@ list: ## List pip packages in available environments
 		$$venv/bin/pip list 2>/dev/null || echo "No packages or pip not available"; \
 		echo; \
 	done
+	
+# ============================================================================
+# MARK: - Codegen
+# ============================================================================
+
+# Base dir for generated Python types; mirrors _PYTHON_TYPES_BASE in
+# schema/scripts/reuse/codegen.sh. Kept in sync so the fleet-wide normalization
+# sweep targets every generated model regardless of its generate script.
+_PYTHON_TYPES_BASE := src/foundationTypes
+
+codegen-all: check-uv  ## Run all schema codegen scripts in schema/scripts/
+	@for script in schema/scripts/*.sh; do \
+		echo "Generating: $$script"; \
+		bash "$$script"; \
+	done
+	@echo "Normalizing all generated models (fleet-wide DataModelHelper contract)..."
+	@bash schema/scripts/reuse/normalize_generated.sh $(_PYTHON_TYPES_BASE)
+	@echo "Formatting the generated tree with black (first-class formatter)..."
+	$(UV) black $(_PYTHON_TYPES_BASE)
+	@echo "-- fini --"

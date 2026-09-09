@@ -68,8 +68,8 @@ Follow these steps to set up `{{ cookiecutter.projectIdentifier }}` locally:
 5. **Run linters, type checks, and tests**:
 
     ```sh
-    make uv-fullCheck     # ruff + mypy + pytest
-    # or individually: make uv-lint · make uv-typecheck · make uv-test
+    make fullCheck        # flake8 + mypy + pytest  (first-class)
+    # or individually: make lint · make typecheck · make test
     ```
 
 6. **Commit and push your changes**:
@@ -107,7 +107,7 @@ Before submitting a pull request, make sure:
 
 - [ ] Tests are included for new logic
 - [ ] Documentation is updated if needed
-- [ ] The project supports Python 3.10 through 3.13
+- [ ] The project supports Python 3.11 through 3.15
 - [ ] All tests pass (CI checks will run on PRs)
 
 ---
