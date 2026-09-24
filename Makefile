@@ -1,8 +1,6 @@
-# ============================================================================
-# CONFIG
-# ============================================================================
+# Configuration
 .PHONY: help version checkCleanGit open-github \
-	clean clean-build clean-artifacts clean-test \
+	clean clean-build clean-artifacts clean-test clean-node \
 	bump-patch bump-minor bump-major \
 	check-uv install-uv list-uv \
 	uv-bootstrap-pythons uv-bootstrap uv-sync uv-sync-headless uv-sync-dev uv-sync-release uv-sync-local uv-editable uv-refresh \
@@ -19,38 +17,30 @@
 
 .DEFAULT_GOAL := help
 
-# Load .env file if it exists
+# Load local settings when available.
 ifneq (,$(wildcard .env))
     include .env
     export
 endif
 
-# Defaults (overridable via .env — the user-editable surface). Keep in sync with .env.
-PYTHONS ?= 3.11 3.12 3.13
+# Defaults can be overridden in .env.
+PYTHONS ?= 3.11 3.12 3.13 3.14 3.15
 DEFAULT_PYTHON ?= 3.13
 PYTHON ?= python3
 VENV ?= .cleanroom-venv
 
-# Quality-target paths. ROOT half has NO src/ — its Python lives in hooks/ + tests/
-# (see GAPS.md §6). The template half overrides these to src/. Overridable via .env.
+# Paths checked by linting and type-checking targets.
 PY_SRC ?= hooks
 PY_TESTS ?= tests
 PY_EXAMPLES ?=
 PY_ALL ?= $(PY_SRC) $(PY_TESTS) $(PY_EXAMPLES)
 
-# mypy cannot CRAWL a src/ layout that is editable-installed: the editable .pth puts
-# src/ on sys.path, so each module resolves under both `pkg` and `src.pkg` → mypy's
-# "Source file found twice under different module names" error. Drive mypy by package
-# NAME instead (resolved via the single src/ root). Top-level packages = src/ subdirs
-# that have an __init__.py. Empty for the hooks/ root variant (no src/), which crawls
-# normally. See uv-typecheck.
+# Discover packages by name so mypy handles editable src-layout installs correctly.
 MYPY_PKGS := $(patsubst src/%/,-p %,$(sort $(dir $(wildcard src/*/__init__.py))))
 
 
-# Derived
-# Tool runner for uv- quality/test recipes. `--extra dev` ensures ruff/mypy/pytest are
-# resolved (and installed if missing) from the "[dev]" extra even on a FRESH checkout —
-# no reliance on a pre-existing .venv, rather than the ambient PATH.
+# Derived settings
+# Run quality and test tools through uv with the development dependencies available.
 UV := uv run --no-project 
 PIP := $(PYTHON) -m pip
 BUMPVERSION := bumpversion --allow-dirty
@@ -58,14 +48,12 @@ REPO := $(notdir $(CURDIR))
 UNAME_S := $(shell uname -s)
 HR := ========================================
 
-# Guard: DEFAULT_PYTHON must be one of the versions we test against.
+# The default version must be included in the test matrix.
 ifeq ($(filter $(DEFAULT_PYTHON),$(PYTHONS)),)
     $(error DEFAULT_PYTHON ($(DEFAULT_PYTHON)) is not in PYTHONS ($(PYTHONS)) — fix .env)
 endif
 
-# ============================================================================
-# MARK: - Helpers · 
-# ============================================================================
+# Helpers
 
 define uninstall_package_list
 	@$(1) | while read pkg; do \
@@ -83,10 +71,7 @@ define print_packages
 	@echo
 endef
 
-# Roll HISTORY.md on a version bump: open a fresh dated section under
-# [Unreleased] (folding the accumulated notes into the just-bumped version) and
-# amend it into bump2version's commit so version + changelog move together.
-# Keep-a-Changelog convention: the `## [Unreleased]` header is the anchor.
+# Add a dated release section to HISTORY.md and include it in the version commit.
 define roll_changelog
 	@ver=$$($(MAKE) -s version); day=$$(date +%F); \
 	awk -v v="$$ver" -v d="$$day" '\
@@ -100,11 +85,9 @@ define roll_changelog
 	esac
 endef
 
-# ============================================================================
-# MARK: - HELP
-# ============================================================================
+# Help
 help:  ## Show this help
-	@echo "$(REPO) — make targets   (bare = pip · FIRST-CLASS · uv-… = uv runner · second-class)"
+	@echo "$(REPO) — available make targets"
 	@echo "config: DEFAULT_PYTHON=$(DEFAULT_PYTHON)  PYTHONS=$(PYTHONS)"
 	@echo ""
 	@awk 'BEGIN {FS = ":.*?## "} \
@@ -113,21 +96,18 @@ help:  ## Show this help
 		$(MAKEFILE_LIST)
 
 
-# ============================================================================
-# MARK: - COMMON · VERSION & GIT
-# ============================================================================
+# Version and Git
 ##@ Common · Version & Git
 version:  ## Display the current project version
 	@$(PYTHON) -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])" 2>/dev/null \
 		|| grep -m1 '^version' pyproject.toml | cut -d'"' -f2
 
-checkCleanGit:  ## Guard: fail if the git working tree is dirty
+checkCleanGit:  ## Verify that the Git working tree is clean
 	@[ -z "$$(git status --porcelain)" ] || \
 		(echo "Working tree is dirty. Commit or stash changes first."; exit 1)
 
-# Static pattern rule: all three documented parts share one recipe (`$*` = the
-# part). Bump the version, then roll the changelog into the same commit.
-bump-patch bump-minor bump-major: bump-%:  ## Bump version (patch|minor|major) + roll HISTORY.md
+# Version bump targets share this recipe and update the changelog.
+bump-patch bump-minor bump-major: bump-%:  ## Bump the version and update HISTORY.md
 	$(BUMPVERSION) $*
 	$(call roll_changelog)
 
@@ -140,13 +120,11 @@ open-github:  ## Open the GitHub repository in the default browser (macOS/Linux)
 	elif command -v xdg-open >/dev/null 2>&1; then xdg-open "$$url"; \
 	else echo "No browser opener found; visit: $$url"; fi
 
-# ============================================================================
-# MARK: - COMMON · CLEAN
-# Base cleanup targets used by install, test, and CI workflows.
-# ============================================================================
+# Cleanup
+# Cleanup targets used by development and CI workflows.
 ##@ Common · Clean
 
-clean: clean-build clean-artifacts clean-test ## Remove all build, cache, and test artifacts
+clean: clean-build clean-artifacts clean-test clean-node ## Remove all build, cache, and test artifacts
 
 clean-build: ## Remove packaging and distribution artifacts
 	rm -rf build/ dist/ .eggs/
@@ -171,11 +149,20 @@ clean-test: ## Remove test, coverage, and lint caches
 		.tox/ \
 		.nox/
 
-# ============================================================================
-# MARK: - UV · TOOLING
-# ============================================================================
+clean-node: ## Remove node_modules directories and related package files
+	find . -name 'node_modules' -type d -prune | while read -r dir; do \
+		parent="$$(dirname "$$dir")"; \
+		rm -f "$$parent/package.json" \
+		      "$$parent/package-lock.json" \
+		      "$$parent/npm-shrinkwrap.json" \
+		      "$$parent/yarn.lock" \
+		      "$$parent/pnpm-lock.yaml"; \
+		rm -rf "$$dir"; \
+	done
+
+# uv tooling
 ##@ UV · Tooling
-check-uv:  ## Check if uv is installed (guard for all uv- targets)
+check-uv:  ## Verify that uv is installed
 	@command -v uv >/dev/null 2>&1 || { \
 	  echo "ERROR: uv not found."; \
 	  echo "  Install it with: make install-uv"; \
@@ -216,18 +203,13 @@ list-uv: check-uv  ## List uv envs, installed Pythons, packages, and cache info
 	@uv cache dir
 	@du -sh $$(uv cache dir) 2>/dev/null || echo "Cache empty or not accessible"
 
-# ============================================================================
-# MARK: - UV · BOOTSTRAP & SYNC
-# ============================================================================
+# uv setup and synchronization
 ##@ UV · Bootstrap & Sync
 uv-bootstrap-pythons: check-uv  ## Install all configured Python versions via uv
 	uv python install $(PYTHONS)
 
-# Dependency model (BKM; see GAPS §5 / spec §6): pyproject.toml declares dependency
-# NAMES ONLY — never version-pinned (only the application layer pins; module-level pins
-# cause conflicts). The requirements*.txt files carry pins and git-based pointers, and
-# every install path — pip AND uv — leans on them: `-r requirements.txt` then the
-# editable self-install. No `uv.lock`, no `lock`/compile target.
+# Dependency versions and source overrides are defined in requirements files.
+# Install requirements before installing this package in editable mode.
 
 uv-bootstrap: check-uv uv-bootstrap-pythons  ## Full bootstrap: pythons + venv + deps
 	uv venv --python $(DEFAULT_PYTHON)
@@ -272,11 +254,9 @@ uv-refresh: check-uv  ## Clean cache + reinstall from requirements + upgrade edi
 	uv pip install -r requirements.txt
 	uv pip install --upgrade -e ".[dev]"
 
-# ============================================================================
-# MARK: - UV · QUALITY
-# ============================================================================
-##@ UV · Quality  (second-class uv RUNNER for the first-class flake8/black/mypy tools)
-uv-lint: check-uv  ## Run flake8 via uv (read-only; non-zero exit for CI)
+# uv quality checks
+##@ UV · Quality
+uv-lint: check-uv  ## Run flake8 via uv
 	$(UV) flake8 $(PY_ALL)
 
 uv-format: check-uv  ## Format code with black via uv
@@ -290,16 +270,12 @@ else
 	$(UV) mypy $(PY_TESTS) $(PY_EXAMPLES)
 endif
 
-# ty (Astral's preview type-checker) is intentionally OUT for now (decision D1):
-# it's pre-release and not wired into uv-fullCheck. Revisit when it stabilizes.
-uv-fullCheck: check-uv uv-lint uv-typecheck uv-test  ## lint + typecheck + tests
+# The preview `ty` type checker is not included in the quality gate.
+uv-fullCheck: check-uv uv-lint uv-typecheck uv-test  ## Run linting, type checks, and tests
 
-# ============================================================================
-# MARK: - UV · TEST
-# ============================================================================
+# uv tests
 ##@ UV · Test
-# Depends on uv-sync so a fresh checkout never tests an empty/stale .venv (no
-# false-green no-op): the [dev] extra is installed from pyproject before pytest runs.
+# Synchronize development dependencies before running tests.
 uv-test: check-uv uv-sync  ## Run tests on DEFAULT_PYTHON (ensures a synced env first)
 	$(UV) pytest
 
@@ -335,9 +311,7 @@ uv-test-all: check-uv  ## Run tests across all configured Python versions (.venv
 
 uv-test-matrix: uv-bootstrap-pythons uv-test-all  ## Ensure Pythons installed, then run all tests
 
-# ============================================================================
-# MARK: - UV · FLUSH / NUKE
-# ============================================================================
+# uv environment cleanup
 ##@ UV · Flush / Nuke
 
 uv-flush-envs:  ## Remove all virtual environments (.venv + .venvs/<ver>)
@@ -352,7 +326,7 @@ uv-flush-cache: check-uv  ## Clean uv cache
 	uv cache clean
 	@echo "uv cache cleaned."
 
-uv-flush-pythons:  ## Remove uv-managed Python installs (NUCLEAR)
+uv-flush-pythons:  ## Remove uv-managed Python installations
 	@echo "WARNING: This removes ALL uv-managed Python installations!"
 	@echo "Location: ~/.local/share/uv/python"
 	rm -rf ~/.local/share/uv/python
@@ -361,24 +335,20 @@ uv-flush-pythons:  ## Remove uv-managed Python installs (NUCLEAR)
 uv-flush-everything: clean uv-flush-envs uv-flush-cache  ## Full cleanup (keeps pythons)
 	@echo "Environment flushed. Run 'make uv-flush-pythons' separately for global Pythons."
 
-uv-nuke: uv-flush-everything  ## NUCLEAR: everything then prompt for Python removal
+uv-nuke: uv-flush-everything  ## Clean all uv data and optionally remove Python installations
 	@echo ""
 	@echo ">> Running uv-nuke..."
 	@$(MAKE) uv-flush-pythons
 	@echo ""
 	@echo "Environment nuked. Run 'make uv-bootstrap' to rebuild from scratch."
 
-uv-lifecycle-test: uv-flush-everything uv-bootstrap uv-test-all  ## flush -> bootstrap -> test-all
+uv-lifecycle-test: uv-flush-everything uv-bootstrap uv-test-all  ## Rebuild the uv environment and run the test matrix
 	@echo ">> Lifecycle test complete"
 
-# ============================================================================
-# MARK: - PIP · INSTALL
-# ============================================================================
+# pip installation
 ##@ PIP · Install
-# Ambient-pip fallback (prefer the uv- path). Both pip and uv lean on the requirements
-# file (BKM rule 4): install -r requirements.txt, then self-install the editable
-# package. No --break-system-packages / --force-reinstall: use a venv (make uv-sync)
-# rather than fighting an externally-managed interpreter.
+# These targets use the active Python environment. Prefer the uv workflow for an
+# isolated development environment.
 installDev: clean  ## Install dev dependencies with pip (-r requirements.txt + editable [dev])
 	$(PIP) install -r requirements.txt
 	$(PIP) install -e ".[dev]"
@@ -390,17 +360,15 @@ refresh:  ## Refresh pip packages: reinstall from requirements + upgrade editabl
 	$(PIP) install -r requirements.txt
 	$(PIP) install --upgrade -e ".[dev]"
 
-# ============================================================================
-# MARK: - PIP · QUALITY  (FIRST-CLASS)
-# ============================================================================
-##@ PIP · Quality  (FIRST-CLASS: flake8 + black + mypy, run on ambient $(PYTHON))
-lint:  ## Run flake8 (read-only; non-zero exit for CI) — first-class
+# pip quality checks
+##@ PIP · Quality
+lint:  ## Run flake8 using the active Python environment
 	$(PYTHON) -m flake8 $(PY_ALL)
 
-format:  ## Format code with black — first-class
+format:  ## Format code with black using the active Python environment
 	$(PYTHON) -m black $(PY_ALL)
 
-typecheck:  ## Strict type check with mypy — first-class
+typecheck:  ## Run strict type checks with mypy
 ifeq ($(strip $(MYPY_PKGS)),)
 	$(PYTHON) -m mypy $(PY_SRC) $(PY_TESTS) $(PY_EXAMPLES)
 else
@@ -408,15 +376,10 @@ else
 	$(PYTHON) -m mypy $(PY_TESTS) $(PY_EXAMPLES)
 endif
 
-fullCheck: lint typecheck test  ## FIRST-CLASS gate: flake8 + mypy + pytest
+fullCheck: lint typecheck test  ## Run linting, type checks, and tests
 
-# nuke's inverse (see the comment on `nuke`). Rebuilds the build backend
-# (setuptools/wheel) that `ensurepip` never bundles on Python >= 3.12 (E1).
-# Deliberately NOT wired as a prereq of installDev/e/refresh/build (D1) — those
-# targets keep failing loudly on their own terms rather than growing a guard
-# layer; check-pip is scoped only to the clean-room target (D2, see C2 comment
-# on cleanRoomBootstrap below).
-pip-bootstrap:  ## Rebuild the ambient build backend after `nuke` (NETWORK REQUIRED)
+# Restore pip and its build tools after running `make nuke`.
+pip-bootstrap:  ## Restore pip build tools after `nuke` (requires network access)
 	@echo "Bootstrapping ambient pip + build backend (setuptools, wheel)..."
 	$(PYTHON) -m ensurepip --upgrade
 	$(PIP) install --upgrade setuptools wheel
@@ -425,9 +388,7 @@ pip-bootstrap:  ## Rebuild the ambient build backend after `nuke` (NETWORK REQUI
 	@echo "Python), this interpreter refuses ambient installs by design — use"
 	@echo "'make uv-bootstrap' instead (offline-capable via uv's cache)."
 
-# ============================================================================
-# MARK: - PIP · TEST
-# ============================================================================
+# pip tests
 ##@ PIP · Test
 
 test:  ## Run tests using the current Python environment
@@ -436,21 +397,8 @@ test:  ## Run tests using the current Python environment
 cleanRoomCleanup:  ## Delete the clean-room venv ($(VENV))
 	rm -rf $(VENV) || true
 
-# check-pip guard. Assert ONLY what the clean room actually needs: that the
-# ambient interpreter can build a working venv, i.e. `ensurepip` is present.
-#
-# It deliberately does NOT assert that `setuptools.build_meta` imports on the
-# ambient interpreter. The clean room installs into $(VENV) under PEP-517 build
-# isolation, which provisions its own setuptools from PyPI — the ambient
-# interpreter's build backend is never consulted. Guarding on it produced a
-# false negative that blocked a clean room which then succeeded when run by
-# hand. That assertion is only meaningful for --no-build-isolation ambient
-# installs (`e`, `installDev`), which D1 deliberately leaves ungated.
-#
-# NETWORK REQUIRED for the recipe below: since Python 3.12 ensurepip seeds pip
-# only (E1), so a fresh venv has no build backend and PEP-517 isolation must
-# reach PyPI. A backend-less ambient interpreter does not change that either
-# way, which is precisely why it is not worth guarding here.
+# Verify that the active Python can create a virtual environment with pip.
+# Clean-room setup requires network access to install build dependencies.
 check-pip:  ## Check the ambient interpreter can create the clean-room venv
 	@$(PYTHON) -m ensurepip --version >/dev/null 2>&1 || { \
 	  echo "ERROR: ensurepip unavailable on $(PYTHON) — cannot create $(VENV)."; \
@@ -458,15 +406,9 @@ check-pip:  ## Check the ambient interpreter can create the clean-room venv
 	  echo "  Or use the uv path: make uv-sync"; \
 	  exit 1; }
 
-# The clean room is an install path, so it obeys the same BKM rule as every other
-# one (see the dependency-model comment above ##@ UV · Bootstrap): pyproject.toml
-# declares dependency NAMES ONLY, and requirements.txt carries the pins and the
-# git/path pointers. Installing ".[dev]" alone makes pip resolve those bare names
-# against PyPI, which fails outright for any unpublished sibling dependency
-# (`No matching distribution found`). Install the requirements file FIRST, then the
-# package. Keep ".[dev]" NON-editable here — validating the real packaging path is
-# this target's entire purpose.
-cleanRoomBootstrap: cleanRoomCleanup check-pip  ## Bootstrap the clean-room venv + deps (runs NO tests)
+# Install pinned requirements before the package. The package is installed normally,
+# rather than editable, to validate the distribution workflow.
+cleanRoomBootstrap: cleanRoomCleanup check-pip  ## Create the clean-room environment and install dependencies
 	$(PYTHON) -m venv $(VENV)
 	. $(VENV)/bin/activate && \
 	which python3 && \
@@ -482,15 +424,9 @@ cleanRoomPytest:  ## Run pytest inside the clean-room venv
 testInEnv: clean cleanRoomBootstrap cleanRoomPytest cleanRoomCleanup  ## Full clean-room test
 	@echo ">> testInEnv completed"
 
-# ============================================================================
-# MARK: - PIP · BUILD & RELEASE
-# ============================================================================
+# Build and release
 ##@ PIP · Build & Release
-# build/twine were previously invoked against ambient $(PYTHON), but both are
-# declared in [project.optional-dependencies].dev, which installs into .venv —
-# not the ambient interpreter (E4, a live bug independent of the FA this track
-# is fixing). Route them through `uv run --with` instead so they resolve
-# correctly on a checkout whose only setup was `make uv-sync`.
+# Run build and publishing tools through uv so no global installation is required.
 build: check-uv clean-build  ## Build sdist + wheel (uv run --with build python -m build)
 	@echo "Building package..."
 	$(UV) --with build python -m build
@@ -503,11 +439,8 @@ release-test: checkCleanGit validateBuild  ## Dry-run publish to TestPyPI (clean
 	@echo "Uploading $(REPO) v$$($(MAKE) -s version) to TestPyPI..."
 	@$(UV) --with twine twine upload --repository testpypi dist/*
 
-# PyPI publishing is owned by CI, not this Makefile. Per the ci-cd spec, the
-# pipeline is the single authoritative path to production — no manual, out-of-band
-# uploads. `.github/workflows/tag-on-prod.yml` tags v<version> on push to `prod`;
-# a publish-on-tag workflow promotes that artifact. `make release` therefore
-# refuses to upload and prints the release procedure instead.
+# Production releases are published by CI. This target validates the build and
+# displays the release procedure without uploading artifacts.
 release: validateBuild  ## Refuse local upload; print the CI-driven release procedure
 	@echo "Local PyPI upload is disabled — the pipeline is the authoritative publish path."
 	@echo ""
@@ -519,22 +452,11 @@ release: validateBuild  ## Refuse local upload; print the CI-driven release proc
 	@echo "For a local pre-flight, use: make release-test (TestPyPI)."
 	@exit 1
 
-# ============================================================================
-# MARK: - PIP · FLUSH / LIST
-# ============================================================================
+# pip environment cleanup
 ##@ PIP · Flush / List
-# `nuke` is the INFERIOR pip fallback (Lesson 2): it per-package-uninstalls from
-# the AMBIENT interpreter ($(PIP)). Prefer `make uv-flush-envs` — deleting the
-# venv dir is the reliable flush primitive. Use this only when you're stuck in a
-# non-deletable (e.g. system) env. Non-editable URL/VCS installs are skipped.
-#
-# --exclude setuptools --exclude wheel: at Python >= 3.12, pip/_internal/commands/
-# freeze.py:12-20 stopped suppressing the build backend from `pip freeze`
-# (_should_suppress_build_backends() is version-gated below 3.12), so an
-# unqualified `freeze --exclude-editable | pip uninstall` now removes the very
-# build backend the interpreter needs to install anything afterward — including
-# itself. Keep these exclusions; do not "clean up" them in a later refactor.
-nuke: ## Per-package uninstall from ambient env (inferior — prefer uv-flush-envs)
+# Remove packages from the active Python environment. Prefer `uv-flush-envs` when
+# using a virtual environment. Core packaging tools are preserved for recovery.
+nuke: ## Remove packages from the active environment (prefer uv-flush-envs)
 	@echo "Uninstalling regular packages (skipping system-managed)..."
 	$(call uninstall_package_list,$(PIP) freeze --exclude-editable --exclude setuptools --exclude wheel | grep -v ' @ ')
 
@@ -564,13 +486,9 @@ list: ## List pip packages in available environments
 		echo; \
 	done
 	
-# ============================================================================
-# MARK: - Codegen
-# ============================================================================
+# Code generation
 
-# Base dir for generated Python types; mirrors _PYTHON_TYPES_BASE in
-# schema/scripts/reuse/codegen.sh. Kept in sync so the fleet-wide normalization
-# sweep targets every generated model regardless of its generate script.
+# Base directory for generated Python types. Keep this aligned with codegen.sh.
 _PYTHON_TYPES_BASE := src/foundationTypes
 
 codegen-all: check-uv  ## Run all schema codegen scripts in schema/scripts/
