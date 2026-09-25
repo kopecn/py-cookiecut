@@ -1,6 +1,4 @@
-# ==============================
-# Python Build / Bytecode Artifacts
-# ==============================
+# MARK: - Python Build / Bytecode Artifacts
 
 # Compiled Python files (bytecode)
 __pycache__/
@@ -22,9 +20,7 @@ parts/
 var/
 
 
-# ==============================
-# Virtual Environments & Dependencies
-# ==============================
+# MARK: - Virtual Environments & Dependencies
 
 # General virtual environments (Modern and Classic)
 .venv/
@@ -37,17 +33,15 @@ env/
 # Specific package manager caches / lock files
 poetry.lock
 Pipfile.lock
-# uv.lock is intentionally NOT committed: this is a library/template, so we declare
-# version ranges (requires-python) and stay on uv's `uv pip` interface, which never
-# writes a lockfile (only `uv sync`/`uv lock` do). Ignored as belt-and-suspenders.
+# uv.lock is intentionally NOT committed: this is a library, so we declare version
+# ranges (requires-python) and stay on uv's `uv pip` interface, which never writes a
+# lockfile (only `uv sync`/`uv lock` do). Ignored as belt-and-suspenders.
 uv.lock
 # NOTE: requirements.txt and requirements-release.txt are COMMITTED, not ignored. Per the
-# dependency BKM (spec §6) pyproject.toml declares dependency NAMES ONLY; the requirements
-# files carry the pins + git-based pointers and every install path leans on them. There is
-# no `lock`/compile step. See spec §6 / GAPS §7 Item 1.
+# dependency BKM pyproject.toml declares dependency NAMES ONLY; the requirements files carry
+# the pins + git-based pointers and every install path leans on them. No `lock`/compile step.
 # requirements-local.txt is the per-machine local editable sibling overlay (`-e ../sibling`
-# lines) consumed by `make uv-sync-local`. Per-machine paths, never committed; CI/release
-# never reads it.
+# lines) consumed by `make uv-sync-local`. Never committed.
 requirements-local.txt
 # Generic wheel/package info folders
 *.egg-info/
@@ -57,9 +51,7 @@ requirements-local.txt
 .nox/
 .mypy_cache/
 
-# ==============================
-# Tooling and Static Analysis Caches
-# ==============================
+# MARK: - Tooling and Static Analysis Caches
 
 # Coverage / Testing Reports
 .coverage
@@ -79,9 +71,7 @@ dmypy.json
 .ipynb_checkpoints/
 
 
-# ==============================
-# IDEs, Editors, and OS System Files
-# ==============================
+# MARK: - IDEs, Editors, and OS System Files
 
 # macOS system files
 .DS_Store
@@ -102,9 +92,7 @@ dmypy.json
 local_settings.py
 
 
-# ==============================
-# Packaging, Installation & Build Systems
-# ==============================
+# MARK: - Packaging, Installation & Build Systems
 
 # General package distribution folders (PyInstaller/Build tools)
 # PyInstaller spec files
@@ -120,9 +108,7 @@ CMakeCache.txt
 cmake_install.cmake
 
 
-# ==============================
-# Documentation and Translations
-# ==============================
+# MARK: - Documentation and Translations
 
 # Sphinx documentation builds
 docs/_build/
@@ -132,10 +118,8 @@ docs/_build/
 *.pot
 
 
-# ==============================
-# Local Runtime Data & Logs 
+# MARK: - Local Runtime Data & Logs 
 # (DO NOT COMMIT THESE FILES!)
-# ==============================
 
 # Databases and local state files
 # SQLite database file
